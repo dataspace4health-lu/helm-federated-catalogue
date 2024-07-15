@@ -13,6 +13,7 @@
 This project is part of the XFSC Federated Catalogue initiative. It focuses on deploying the Federated Catalogue (FC) service and the demo portal.
 For more details, please visit:
 https://gitlab.eclipse.org/eclipse/xfsc/cat/fc-service
+https://gitlab.eclipse.org/eclipse/xfsc/cat/fc-service/-/wikis/home
 
 ##  Usage
 - The project is developed using the following tools:
