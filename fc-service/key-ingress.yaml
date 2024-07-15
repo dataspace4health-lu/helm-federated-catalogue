@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    meta.helm.sh/release-name: fc
+    meta.helm.sh/release-namespace: default
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 128k
+  creationTimestamp: "2024-07-09T08:55:38Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/component: keycloak
+    app.kubernetes.io/instance: fc
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/version: 24.0.5
+    helm.sh/chart: keycloak-21.6.0
+  name: fc-keycloak
+  namespace: default
+  resourceVersion: "6641"
+  uid: 545fa668-89fa-4432-9656-c8ba8bc574ea
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: key-server
+    http:
+      paths:
+      - backend:
+          service:
+            name: fc-keycloak
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+status:
+  loadBalancer:
+    ingress:
+    - ip: 172.19.0.2
+    - ip: 172.19.0.3
+    - ip: 172.19.0.4

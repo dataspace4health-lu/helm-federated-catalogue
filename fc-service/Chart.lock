@@ -1,0 +1,12 @@
+dependencies:
+- name: postgresql
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 15.5.14
+- name: neo4j
+  repository: https://neo4j.github.io/helm-charts/
+  version: 5.20.0
+- name: keycloak
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 21.6.0
+digest: sha256:cc0fcbde54fd0e990af9747cea5c201ec101dbdae915f9394e6065c5af78f46c
+generated: "2024-07-09T10:55:12.894014582+02:00"
