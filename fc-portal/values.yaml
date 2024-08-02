@@ -1,0 +1,139 @@
+# Default values for fc-portal.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+name: fc-portal
+replicaCount: 1
+
+image:
+  repository: ds4hregistry.azurecr.io/devre/fc-demo-portal
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets:
+  - name: fcat-portal-azurecr
+nameOverride: ""
+#fullnameOverride: "fc-portal"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  allowPrivilegeEscalation: false
+  # fsGroup: 2000
+
+securityContext: {}
+#  # capabilities:
+#  #   drop:
+#  #   - ALL
+#  # readOnlyRootFilesystem: true
+#  # runAsNonRoot: true
+#  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8081
+
+ingress:
+  enabled: true
+  # className: nginx
+  annotations:
+    # kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.allow-http: "true"
+    # cert-manager.io/cluster-issuer: cert-manager-webhook
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" #true"
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    # nginx.ingress.kubernetes.io/server-snippet: |
+    #     location /actuator {
+    #       deny all;
+    #       return 403;
+    #     }
+  hosts:
+    - host: null
+      paths:
+        - path: /portal
+          pathType: Prefix
+  # tls:
+  #   - secretName: wildcard-gxfs-dev
+  #     hosts:
+  #       - fc-server
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+probes:
+  path: /catalog/actuator/health
+  initialDelaySeconds: 60
+  periodSeconds: 30
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - fc-portal
+          topologyKey: "kubernetes.io/hostname"
+
+restartPolicy: Always
+
+# hostAliases:
+#   - ip: "10.97.11.112" #use ClusterIP of your Ingress Controller here
+#     hostnames:
+#       - key-server
+
+storage:
+  enabled: false
+  size: 2Gi
+  path: /mnt/data/postgresql
+
+extraEnv:
+  - name: SERVER_SERVLET_CONTEXT_PATH
+    value: /portal
+  - name: FEDERATED_CATALOGUE_BASE_URI
+    value: http://dataspace4health.local/catalog
+  - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI
+    value: http://dataspace4health.local/iam/realms/gaia-x
+  # - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY
+  #   value: DEBUG
+
+keycloak:
+  client:
+    id: keycloak
+    secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9"

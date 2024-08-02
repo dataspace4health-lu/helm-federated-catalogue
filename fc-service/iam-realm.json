@@ -436,26 +436,6 @@
       },
       "notBefore": 0,
       "groups": []
-    },
-    {
-      "username": "testuser",
-      "enabled": true,
-      "emailVerified": false,
-      "firstName": "Test",
-      "lastName": "User",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "Qwerty123.",
-          "temporary": false
-        }
-      ],
-      "clientRoles": {
-        "federated-catalogue": [
-          "Ro-MU-CA"
-        ]},
-      "groups": [
-      ]
     }
   ],
   "scopeMappings": [
@@ -658,7 +638,8 @@
         "http://78.138.66.147:8088/*",
         "https://fc-demo-server.gxfs.dev/*",
         "http://fc-demo-server.gxfs.dev/*",
-        "http://portal/login/oauth2/code/*"
+        "http://localhost:8088/*",
+        "http://127.0.0.1:8088/*"
       ],
       "webOrigins": [],
       "notBefore": 0,

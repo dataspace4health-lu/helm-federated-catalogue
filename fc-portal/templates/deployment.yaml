@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "fc-service.fullname" . }}
+  name: {{ include "fc-portal.fullname" . }}
   labels:
-    {{- include "fc-service.labels" . | nindent 4 }}
+    {{- include "fc-portal.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "fc-service.selectorLabels" . | nindent 6 }}
+      {{- include "fc-portal.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,55 +18,27 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "fc-service.selectorLabels" . | nindent 8 }}
+        {{- include "fc-portal.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "fc-service.serviceAccountName" . }}
+      serviceAccountName: {{ include "fc-portal.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ include "fc-service.fullname" . }}
+        - name: {{ include "fc-portal.fullname" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            {{- if .Values.neo4j.enabled }}
-            - name: GRAPHSTORE_URI
-              value: bolt://{{ include "fc-service.fullname" . }}-neo4j.{{ .Release.Namespace }}.svc.cluster.local:7687
-            {{- else }}
-            - name: GRAPHSTORE_URI
-              value: {{ .Values.neo4j.uri }}
-            {{- end }}
-            - name: GRAPHSTORE_PASSWORD
+            - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FC_CLIENT_OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "fc-service.fullname" . }}-neo4j
-                  key: password
-            {{- if .Values.postgresql.enabled }}
-            - name: SPRING_DATASOURCE_URL
-              value: jdbc:postgresql://{{ include "fc-service.fullname" . }}-postgresql-hl.{{ .Release.Namespace }}.svc.cluster.local:5432/{{ .Values.postgresql.auth.database }}
-            {{- else }}
-            - name: SPRING_DATASOURCE_URL
-              value: {{ .Values.postgresql.url }}
-            {{- end }}
-            - name: SPRING_DATASOURCE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "fc-service.fullname" . }}-postgresql
-                  key: password
-            - name: KEYCLOAK_AUTH_SERVER_URL
-              value: {{ .Values.keycloak.url }}
-            - name: KEYCLOAK_CREDENTIALS_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "fc-service.fullname" . }}-keycloak-client
+                  name: {{ include "fc-portal.fullname" . }}-keycloak-client
                   key: client-secret
-            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
-              value: {{ .Values.keycloak.jwtIssuer }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -74,10 +46,10 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-#          livenessProbe:
-#            httpGet:
-#              path: /actuator/health
-#              port: http
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
           readinessProbe:
             httpGet:
               path: {{ .Values.probes.path }} 
