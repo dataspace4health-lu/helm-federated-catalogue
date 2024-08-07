@@ -41,7 +41,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 8081
+  port: 8088
 
 ingress:
   enabled: true
@@ -136,4 +136,4 @@ extraEnv:
 keycloak:
   client:
     id: keycloak
-    secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9"
+    secret: "**********"
