@@ -6,7 +6,7 @@ name: fc-portal
 replicaCount: 1
 
 image:
-  repository: ds4hregistry.azurecr.io/devre/fc-demo-portal
+  repository: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-demo-portal:latest
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
