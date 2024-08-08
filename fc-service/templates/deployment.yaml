@@ -74,10 +74,10 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-#          livenessProbe:
-#            httpGet:
-#              path: /actuator/health
-#              port: http
+          livenessProbe:
+           httpGet:
+             path: {{ .Values.probes.path }} 
+             port: http
           readinessProbe:
             httpGet:
               path: {{ .Values.probes.path }} 

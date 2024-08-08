@@ -38,7 +38,7 @@ uninstall:
 	helm uninstall $(CURRENT_DIR) 2> /dev/null || true
 	kubectl delete pvc data-fcat-service-neo4j-0 2> /dev/null || true
 	kubectl delete pvc data-fcat-service-postgresql-0 2> /dev/null || true
-	kubectl delete pvc data-fcat-service-keycloak-postgressql-0 2> /dev/null || true
+	kubectl delete pvc data-fcat-service-keycloak-postgresql-0 2> /dev/null || true
 
 clean: $(SUBDIRS)
 	rm -rf charts helm

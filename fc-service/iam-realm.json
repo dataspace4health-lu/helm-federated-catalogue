@@ -446,7 +446,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Qwerty123.",
+          "value": "xfsc4Ntt!",
           "temporary": false
         }
       ],
@@ -653,12 +653,9 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
+      "secret": "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9",
       "redirectUris": [
-        "http://78.138.66.147:8088/*",
-        "https://fc-demo-server.gxfs.dev/*",
-        "http://fc-demo-server.gxfs.dev/*",
-        "http://dataspace4health.local/portal/login/oauth2/code/fc-client-oidc"
+        "http://dataspace4health.local/*"
       ],
       "webOrigins": [],
       "notBefore": 0,

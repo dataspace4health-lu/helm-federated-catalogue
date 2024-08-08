@@ -6,13 +6,12 @@ name: fc-portal
 replicaCount: 1
 
 image:
-  repository: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-demo-portal:latest
+  repository: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-demo-portal
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
-imagePullSecrets:
-  - name: fcat-portal-azurecr
+imagePullSecrets: []
 nameOverride: ""
 #fullnameOverride: "fc-portal"
 
@@ -56,7 +55,7 @@ ingress:
     nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
     nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
     # nginx.ingress.kubernetes.io/server-snippet: |
-    #     location /actuator {
+    #     location /portal/actuator {
     #       deny all;
     #       return 403;
     #     }
@@ -83,7 +82,7 @@ resources: {}
   #   memory: 128Mi
 
 probes:
-  path: /catalog/actuator/health
+  path: /portal/actuator/health
   initialDelaySeconds: 60
   periodSeconds: 30
 
@@ -135,5 +134,5 @@ extraEnv:
 
 keycloak:
   client:
-    id: keycloak
-    secret: "**********"
+    id: federated-catalog
+    secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9"
