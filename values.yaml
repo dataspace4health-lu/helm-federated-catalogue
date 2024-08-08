@@ -1,0 +1,12 @@
+fc-portal:
+  nameOverride: portal
+fc-service:
+  nameOverride: service
+  postgresql:
+    nameOverride: service-postgresql
+  neo4j:
+    nameOverride: service-neo4j
+  keycloak:
+    nameOverride: service-keycloak
+    postgresql:
+      nameOverride: service-keycloak-postgresql
