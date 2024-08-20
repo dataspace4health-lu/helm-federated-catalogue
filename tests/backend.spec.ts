@@ -18,3 +18,8 @@ test('Get List of users', async ({ request }) => {
   expect(jsonUserList).toHaveProperty('items');
   expect(Array.isArray(jsonUserList.items)).toBe(true);
 });
+test('Get List of participants', async ({ request }) => {
+  const usersList = await request.get(`catalog/participants`);
+  expect(usersList.ok()).toBeTruthy();
+  
+});
