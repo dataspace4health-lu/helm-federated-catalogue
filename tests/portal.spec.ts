@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 
-test('has title', async ({ page }) => {
+test('Check the page has a title ', async ({ page }) => {
   await page.goto('http://dataspace4health.local/portal/');
 
   // Expect a title "to contain" a substring.
   await expect(page).toHaveTitle(/Demo Portal/);
 });
 
-test('click login button', async ({ page }) => {
+test('Test login button', async ({ page }) => {
   await page.goto('http://dataspace4health.local/portal/');
 
   // Click the get started link.
@@ -17,7 +17,7 @@ test('click login button', async ({ page }) => {
   await expect(page).toHaveTitle(/GAIA-X/);
 });
 
-test('check menu', async ({ page }) => {
+test('Test menu', async ({ page }) => {
   await page.goto('http://dataspace4health.local/portal/');
 
   const sidebarWrapper = page.locator('#sidebar-wrapper');

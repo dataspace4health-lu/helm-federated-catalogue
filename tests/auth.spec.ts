@@ -2,7 +2,7 @@ import { test as setup, expect } from '@playwright/test';
 
 const authFile = 'playwright/.auth/user.json';
 
-setup('authenticate', async ({ page }) => {
+setup('Authenticate', async ({ page }) => {
   // Perform authentication steps. Replace these actions with your own.
   await page.goto('http://dataspace4health.local/portal/');
   await page.click('a.btn.btn-success');
