@@ -64,10 +64,10 @@ ingress:
       paths:
         - path: /portal
           pathType: Prefix
-  # tls:
-  #   - secretName: wildcard-gxfs-dev
-  #     hosts:
-  #       - fc-server
+  tls:
+    - secretName: dataspace4health.local
+      hosts:
+        - dataspace4health.local
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -126,13 +126,68 @@ extraEnv:
   - name: SERVER_SERVLET_CONTEXT_PATH
     value: /portal
   - name: FEDERATED_CATALOGUE_BASE_URI
-    value: http://dataspace4health.local/catalog
+    value: https://dataspace4health.local/catalog
   - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI
-    value: http://dataspace4health.local/iam/realms/gaia-x
+    value: https://dataspace4health.local/iam/realms/gaia-x
   # - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY
   #   value: DEBUG
 
 keycloak:
+  enabled: true
   client:
-    id: federated-catalog
+    id: "federated-catalogue"
     secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9"
+  image:
+    tag: 23.0.7
+  auth:
+    adminUser: admin
+    adminPassword: "xfsc4Ntt!"
+  extraEnvVars:
+    - name: KEYCLOAK_EXTRA_ARGS
+      value: "--import-realm"
+    - name: PROXY_ADDRESS_FORWARDING
+      value: "true"
+  extraVolumeMounts:
+    - name: config
+      mountPath: "/opt/bitnami/keycloak/data/import/iam-realm.json"
+      subPath: "iam-realm.json"
+      readOnly: true
+  extraVolumes:
+    - name: config
+      configMap:
+        name: keycloak-realm
+        items:
+        - key: "iam-realm.json"
+          path: "iam-realm.json"
+  logging:
+    level: "DEBUG,io.quarkus:INFO,freemarker.cache:INFO,liquibase:INFO,org.hibernate:INFO,org.infinispan:INFO,org.keycloak.services.scheduled:INFO,org.keycloak.transaction:INFO,io.netty.buffer.PoolThreadCache:INFO,org.keycloak.models.sessions.infinispan:INFO"
+  production: false
+  proxy: edge
+  httpRelativePath: "/iam/"
+  postgresql:
+    enabled: true
+    nameOverride: keycloak-postgressql
+    auth: 
+      database: keycloak
+      username: keycloak 
+      password: "xfsc4Ntt!"
+      postgresPassword: "xfsc4Ntt!"
+    primary:
+      persistence:
+        size: 5Gi
+  ingress:
+    enabled: true
+    # ingressClassName: nginx
+    annotations:
+    #   kubernetes.io/ingress.allow-http: "true"
+    # #  cert-manager.io/cluster-issuer: cert-manager-webhook
+    #   nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    extraHosts:
+      - name: ""
+    pathType: Prefix
+    path: /iam
+    extraTls:
+      - secretName: dataspace4health.local
+        hosts:
+          - dataspace4health.local
