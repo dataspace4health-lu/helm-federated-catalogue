@@ -52,6 +52,8 @@ spec:
           env:
             - name: SERVER_PORT
               value: "{{ .Values.service.port }}"
+            - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI
+              value: {{ .Values.keycloak.jwtIssuer }}
             - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FC_CLIENT_OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
