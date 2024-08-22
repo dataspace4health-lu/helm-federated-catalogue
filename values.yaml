@@ -1,5 +1,7 @@
 fc-portal:
   nameOverride: portal
+  keycloak:
+    enabled: false
 fc-service:
   nameOverride: service
   postgresql:

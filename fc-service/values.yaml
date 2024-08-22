@@ -11,8 +11,8 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
-#imagePullSecrets: []
-#nameOverride: ""
+imagePullSecrets: []
+nameOverride: ""
 #fullnameOverride: "fc-service"
 
 serviceAccount:
@@ -64,10 +64,10 @@ ingress:
       paths:
         - path: /catalog
           pathType: Prefix
-  # tls:
-  #   - secretName: wildcard-gxfs-dev
-  #     hosts:
-  #       - fc-server
+  tls:
+    - secretName: dataspace4health.local
+      hosts:
+        - dataspace4health.local
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -188,8 +188,8 @@ neo4j:
 
 keycloak:
   enabled: true
-  url: http://dataspace4health.local/iam/
-  jwtIssuer: http://dataspace4health.local/iam/realms/gaia-x
+  url: https://dataspace4health.local/iam/
+  jwtIssuer: https://dataspace4health.local/iam/realms/gaia-x
   client:
     id: "federated-catalogue"
     secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9"
@@ -243,10 +243,7 @@ keycloak:
       - name: ""
     pathType: Prefix
     path: /iam
-    servicePort: 8080
-    # tls: true
-  serviceAccount:
-    create: false
-  service:
-    ports:
-      http: 8080
+    extraTls:
+      - secretName: dataspace4health.local
+        hosts:
+          - dataspace4health.local
