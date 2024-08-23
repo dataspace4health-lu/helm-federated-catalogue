@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "fc-portal.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "fc-portal.labels" . | nindent 4 }}
 spec:
@@ -33,7 +34,26 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if and .Values.ingress.tls (gt (len .Values.ingress.tls) 0) }}
+          command: 
+            - /bin/sh
+          args:
+            - -c
+            - |
+              for f in /opt/fc-portal/certs/*.crt; do 
+                echo "Adding certificate $f to keystore"
+                certname=$(echo $(basename $f) | sed 's|.crt||g' )
+                keytool -import -trustcacerts -noprompt -storepass changeit -alias $certname -file $f -keystore ${JAVA_HOME}/lib/security/cacerts
+              done
+              
+              echo "Starting Spring Boot"
+              java ${JAVA_OPTS} -cp @/app/jib-classpath-file eu.xfsc.fc.demo.CatalogueDemoApplication
+          {{- end }}
           env:
+            - name: SERVER_PORT
+              value: "{{ .Values.service.port }}"
+            - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI
+              value: {{ .Values.keycloak.jwtIssuer }}
             - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FC_CLIENT_OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -58,6 +78,22 @@ spec:
             periodSeconds: {{ .Values.probes.periodSeconds }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- range .Values.ingress.tls }}
+            - name: {{ .secretName | replace "." "-" }}
+              mountPath: /opt/fc-portal/certs
+              readOnly: true
+            {{- end }}
+      volumes:
+        {{- range .Values.ingress.tls }}
+        - name: {{ .secretName | replace "." "-" }}
+          secret:
+            secretName: {{ .secretName }}
+            items:
+              - key: ca.crt
+                path: {{ .secretName }}.crt
+            defaultMode: 420
+        {{ end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

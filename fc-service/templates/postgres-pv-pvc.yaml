@@ -3,6 +3,7 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: {{ include "fc-service.name" . }}-postgres-volume
+  namespace: {{ .Release.Namespace }}
   labels:
 #    app: fc-service
     {{- include "fc-service.labels" . | nindent 4 }}

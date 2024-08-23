@@ -3,6 +3,7 @@ apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "fc-portal.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "fc-portal.labels" . | nindent 4 }}
 spec:
