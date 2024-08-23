@@ -29,6 +29,7 @@ export default defineConfig({
     baseURL: 'http://dataspace4health.local',
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    ignoreHTTPSErrors: true,
     extraHTTPHeaders: {
       
       // Add authorization token to all requests.
