@@ -12,7 +12,11 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.46.0",
+    "@playwright/test": "^1.46.1",
     "@types/node": "^22.1.0"
+  },
+  "dependencies": {
+    "jose": "^5.7.0",
+    "jsonwebtoken": "^9.0.2"
   }
 }
