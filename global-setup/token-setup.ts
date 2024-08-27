@@ -5,6 +5,7 @@ async function globalSetup(config: FullConfig) {
     const url = '/iam/realms/gaia-x/protocol/openid-connect/token';
     const requestContext = await request.newContext();
     const response = await requestContext.post(`${baseURL}${url}`, {
+        ignoreHTTPSErrors:true,
         headers: {
             'Accept': '*/*',
             'Content-Type': 'application/x-www-form-urlencoded'

@@ -1,9 +1,8 @@
 import { test, expect, request } from '@playwright/test';
 
-let host: string = "dataspace4health.local"
-
-const baseURL: string = `http://${host}`;
-
+const  id=  `http://gaiax.de`
+const encodedId= "http%3A%2F%2Fgaiax.de"
+test.describe.configure({ mode: 'serial' });
 // Example test for an endpoint
 test('GET API swagger', async ({ request }) => {
   const response = await request.get(`/catalog/swagger-ui/index.html`);
@@ -23,8 +22,7 @@ test('Get List of participants', async ({ request }) => {
 
 });
 test('create participants', async ({ request }) => {
-  let randomInt = Math.floor((Math.random() * 100) + 1);
-  let id=  `http://gaiax.de-${randomInt}`
+  
   const data = {
     "@context": [
       "https://www.w3.org/2018/credentials/v1"
@@ -119,3 +117,18 @@ test('create participants', async ({ request }) => {
   expect(createParticipants.ok()).toBeTruthy();
 
 });
+
+test('Get Created participant ', async ({ request }) => {
+
+  const Participant = await request.get(`catalog/participants/${encodedId}`);
+  console.log("Participant",Participant)
+  expect(Participant.ok()).toBeTruthy();
+
+});
+test('delete Created participant ', async ({ request }) => {
+  
+  const Participant = await request.delete(`catalog/participants/${encodedId}`);
+  expect(Participant.ok()).toBeTruthy();
+
+});
+

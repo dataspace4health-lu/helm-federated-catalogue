@@ -4,7 +4,7 @@ const authFile = 'playwright/.auth/user.json';
 
 setup('Authenticate', async ({ page }) => {
   // Perform authentication steps. Replace these actions with your own.
-  await page.goto('http://dataspace4health.local/portal/');
+  await page.goto('/portal/');
   await page.click('a.btn.btn-success');
   await page.getByRole('textbox',{name:'username'}).fill('testuser');  
   await page.getByRole('textbox',{name:'password'}).fill('xfsc4Ntt!');
