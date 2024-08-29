@@ -36,9 +36,9 @@ uninstall:
 	docker delete pod playwright 2> /dev/null || true
 
 	helm uninstall $(CURRENT_DIR) 2> /dev/null || true
-	kubectl delete pvc data-pippo-neo4j-0 2> /dev/null || true
-	kubectl delete pvc data-pippo-postgresql-0 2> /dev/null || true
-	kubectl delete pvc data-pippo-keycloak-postgressql-0 2> /dev/null || true
+	kubectl delete pvc data-fc-service-neo4j-0  2> /dev/null || true
+	kubectl delete pvc data-fc-service-postgresql-0 2> /dev/null || true
+	kubectl delete pvc data-fc-service-keycloak-postgressql-0 2> /dev/null || true
 
 clean: $(SUBDIRS)
 	rm -rf charts helm
