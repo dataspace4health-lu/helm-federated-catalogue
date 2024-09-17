@@ -1,26 +1,93 @@
-import { test, expect, request } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-const  id=  `http://gaiax.de`
-const encodedId= "http%3A%2F%2Fgaiax.de"
+const id =  `http://gaiax.de`
+const encodedId = "http%3A%2F%2Fgaiax.de"
 test.describe.configure({ mode: 'serial' });
+
+let token;
+
+test('OIDC Authentication', async ({ request, baseURL }) => {
+  const authUrl = `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/auth?` +
+      `response_type=code&` +
+      `client_id=federated-catalogue&` +
+      `scope=openid&` +
+      `redirect_uri=${baseURL}/oidc/auth/callback`;
+  let response = await request.get(authUrl, {
+    maxRedirects: 0
+  });
+  
+  if (response.status() != 302) {
+    // Get post link from response and submit log-in request
+    let body = await response.text();
+    const match = body.match(/<form id="kc-form-login".*action="([^"]+)"[^>]*>/);
+    response = await request.post(match[1], {
+      maxRedirects: 0,
+      form: {
+        username: 'testuser',
+        password: 'xfsc4Ntt!',
+        credentialId: ''
+      }
+    });
+  }
+  
+  expect(response.status()).toBe(302);
+
+  const headers = await response.headers();
+  const code = new URL(headers['location']).searchParams.get('code');
+  expect(code).toBeDefined();
+  expect(code).not.toBe("");
+
+  const tokenUrl = `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/token`;
+  response = await request.post(tokenUrl, {
+    form: {
+      grant_type: 'authorization_code',
+      client_id: 'federated-catalogue',
+      client_secret: 'cf|J{G3z7a,@su5j(EJzq^G$a6)4D9',
+      code: code,
+      redirect_uri: `${baseURL}/oidc/auth/callback`
+    }
+  });
+  
+  const body = await response.json();
+  expect(body.access_token).toBeDefined();
+  expect(body.access_token).not.toBe("");
+
+  token = body.access_token;
+});
+
 // Example test for an endpoint
 test('GET API swagger', async ({ request }) => {
-  const response = await request.get(`/catalog/swagger-ui/index.html`);
+  const response = await request.get(`/catalog/swagger-ui/index.html`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
   expect(response.status()).toBe(200);
   // Add further assertions based on the API response
 });
+
 test('Get List of users', async ({ request }) => {
-  const usersList = await request.get(`catalog/users`);
+  const usersList = await request.get(`catalog/users`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
   expect(usersList.ok()).toBeTruthy();
   let jsonUserList = await usersList.json()
   expect(jsonUserList).toHaveProperty('items');
   expect(Array.isArray(jsonUserList.items)).toBe(true);
 });
+
 test('Get List of participants', async ({ request }) => {
-  const usersList = await request.get(`catalog/participants`);
+  const usersList = await request.get(`catalog/participants`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
   expect(usersList.ok()).toBeTruthy();
 
 });
+
 test('create participants', async ({ request }) => {
   
   const data = {
@@ -107,7 +174,8 @@ test('create participants', async ({ request }) => {
   const createParticipants = await request.post(`catalog/participants`, {
     headers: {
       'Accept': '*/*',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
     },
     data:JSON.stringify(data)
 
@@ -120,14 +188,23 @@ test('create participants', async ({ request }) => {
 
 test('Get Created participant ', async ({ request }) => {
 
-  const Participant = await request.get(`catalog/participants/${encodedId}`);
+  const Participant = await request.get(`catalog/participants/${encodedId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
   console.log("Participant",Participant)
   expect(Participant.ok()).toBeTruthy();
 
 });
+
 test('delete Created participant ', async ({ request }) => {
   
-  const Participant = await request.delete(`catalog/participants/${encodedId}`);
+  const Participant = await request.delete(`catalog/participants/${encodedId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
   expect(Participant.ok()).toBeTruthy();
 
 });

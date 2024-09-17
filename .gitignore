@@ -2,10 +2,9 @@
 **/helm
 **/*.lock
 *.tgz
-node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-playwright/
-tests/results
+node_modules
+/test-results
+/playwright-report
+/blob-report
+/playwright
+/tests/results

@@ -1,17 +1,20 @@
+timestamp = $(shell date "+%Y.%m.%d-%H.%M.%S")
+
 define build =
 helm dependency update
 helm package . -d helm
 endef
 
 define test =
-docker run -d -t --name playwright --ipc=host mcr.microsoft.com/playwright:v1.45.1-jammy
-docker exec playwright bash -c "mkdir app"
-docker cp tests playwright:/app/tests
-docker cp global-setup playwright:/app/global-setup
-docker cp playwright.config.ts playwright:/app/playwright.config.ts
-docker exec playwright bash -c "cd /app && npm i --silent -D @playwright/test && npx playwright install && npx -y playwright test --output /app/tests/results /app/tests/"
-docker cp playwright:/app/tests/results tests/results
-docker cp playwright:/app/playwright-report ./
+mkdir -p tests/results/${timestamp}
+docker run -d -t --name playwright --ipc=host mcr.microsoft.com/playwright:v1.46.1
+docker exec playwright bash -c "mkdir -p app/tests"
+docker cp tests playwright:/app
+-docker exec playwright bash -c "cd /app/tests && export CI=1 && npm i --silent && npx -y playwright test --output ./results"
+if [ $$? -eq 0 ]; then \
+	docker cp playwright:/app/tests/results/ tests/results/${timestamp}/traces; \
+	docker cp playwright:/app/tests/playwright-report/ tests/results/${timestamp}/report; \
+fi
 docker rm -f playwright
 endef
 

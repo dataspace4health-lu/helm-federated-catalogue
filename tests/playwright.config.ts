@@ -11,8 +11,7 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './tests',
-  globalSetup: require.resolve('./tests/global-setup/token-setup'),
+  testDir: './src',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -29,16 +28,7 @@ export default defineConfig({
     baseURL: 'https://dataspace4health.local',
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-    contextOptions:{
-      ignoreHTTPSErrors:true, 
-    },
     ignoreHTTPSErrors: true,
-    extraHTTPHeaders: {
-      
-      // Add authorization token to all requests.
-      // Assuming personal access token available in the environment.
-      'Authorization': `Bearer ${process.env.TOKEN}`
-    },
   },
 
   /* Configure projects for major browsers */
