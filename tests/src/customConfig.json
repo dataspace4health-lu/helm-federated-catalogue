@@ -1,0 +1,34 @@
+{
+  "NTT": {
+    "issuer": "did:web:dataspace4health.local",
+    "idPrefix": "https://dataspace4health.local/participants/ntt",
+    "legalName": "NTT LUXEMBOURG PSF S.A.",
+    "leiCode": "213800IYYHAS95EZXP28",
+    "headquarterAddress": "LU-CA",
+    "legalAddress": "LU-CA"
+  },
+  "LIH": {
+    "issuer": "did:web:dataspace4health.local",
+    "idPrefix": "https://dataspace4health.local/participants/lih",
+    "legalName": "Luxembourg Institute of Health",
+    "leiCode": "213800IYYHAS95EZXP29",
+    "headquarterAddress": "LU-ST", ,
+    "legalAddress": "LU-ST"
+  },
+  "LNDS": {
+    "issuer": "did:web:dataspace4health.local",
+    "idPrefix": "https://dataspace4health.local/participants/lnds",
+    "legalName": "Luxembourg National Data Service",
+    "leiCode": "213800IYYHAS95EZXP30",
+    "headquarterAddress": "LU-EA",
+    "legalAddress": "LU-EA"
+  },
+  "HRS": {
+    "issuer": "did:web:dataspace4health.local",
+    "idPrefix": "https://dataspace4health.local/participants/hrs",
+    "legalName": "Hopitaux Robert Schuman",
+    "leiCode": "213800IYYHAS95EZXP31",
+    "headquarterAddress": "LU-ES",
+    "legalAddress": "LU-ES"
+  }
+}
