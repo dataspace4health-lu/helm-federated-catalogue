@@ -4,8 +4,7 @@ import fs from "fs";
 import path from "path";
 
 
-const customConfig = JSON.parse(
-  fs.readFileSync(path.resolve("src/customConfig.json"), "utf-8")
+const customConfig = JSON.parse(fs.readFileSync(path.resolve("src/customConfig.json"), "utf-8")
 );
 // import config from "../playwright.config";
 // const { customConfig } = config;
