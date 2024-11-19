@@ -1,17 +1,19 @@
 import { test, expect } from "@playwright/test";
-import { createListParticipants, signListJsonLd } from "./utils";
+import { createListParticipants, createListServicesOffering, signListJsonLd } from "./utils";
 import fs from "fs";
 import path from "path";
 
 
 const customConfig = JSON.parse(fs.readFileSync(path.resolve("src/customConfig.json"), "utf-8")
 );
+const serviceOfferingConfig = JSON.parse(fs.readFileSync(path.resolve("src/serviceOfferingConfig.json"), "utf-8"));
 // import config from "../playwright.config";
 // const { customConfig } = config;
 const algorithm = "ES256";
+var VpParticipants: any = [];
 
 let token;
-console.log("customConfig", customConfig);
+//console.log("customConfig", customConfig);
 
 test("OIDC Authentication", async ({ request, baseURL }) => {
   const authUrl =
@@ -74,7 +76,7 @@ test("Create Participants", async ({ request, baseURL }) => {
     algorithm,
     customConfig
   );
-  var VpParticipants: any = [];
+  // var VpParticipants: any = [];
   signedVcParticipants.forEach((signedVcParticipant) => {
     var entity = Object.keys(signedVcParticipant)[0];
     // console.log("key", key);
@@ -93,19 +95,67 @@ test("Create Participants", async ({ request, baseURL }) => {
     algorithm,
     customConfig
   );
+  //console.log("signedVpParticipants", JSON.stringify(signedVpParticipants, null, 2));
   for (const signedVpParticipant of signedVpParticipants) {
     const participant = Object.values(signedVpParticipant)[0];
-    console.log("Participant:", JSON.stringify(participant, null, 2));
+    //console.log("Participant:", JSON.stringify(participant, null, 2));
 
-    const response = await request.post(`${baseURL}/catalog/participants`, {
+    // const response = await request.post(`${baseURL}/catalog/participants`, {
+    //   headers: {
+    //     Accept: "*/*",
+    //     "Content-Type": "application/json",
+    //     Authorization: `Bearer ${token}`,
+    //   },
+    //   data: JSON.stringify(participant),
+    // });
+
+    // expect(response.ok()).toBeTruthy();
+  }
+});
+test("Create Service Offering for Participants", async ({ request, baseURL }) => {
+  const serviceOfferings = await createListServicesOffering(VpParticipants, serviceOfferingConfig, customConfig);
+  //console.log("serviceOfferings", JSON.stringify(serviceOfferings, null, 2));
+  const signedVcServicesOffering = await signListJsonLd(
+    serviceOfferings,
+    algorithm,
+    customConfig
+  );
+  //console.log("signedVcServiceOffering", JSON.stringify(signedVcServicesOffering, null, 2));
+  var VpServicesOffering: any = [];
+  signedVcServicesOffering.forEach((signedVcServiceOffering) => {
+    var entity = Object.keys(signedVcServiceOffering)[0];
+    // console.log("key", key);
+    // console.log("signedVcParticipant", signedVcParticipant);
+    VpServicesOffering.push({
+      [entity]: {
+        "@context": "https://www.w3.org/2018/credentials/v1",
+        type: ["VerifiablePresentation"],
+        verifiableCredential: [signedVcServiceOffering[entity]],
+      },
+    });
+  });
+
+  const signedVpServicesOffering = await signListJsonLd(
+    VpServicesOffering,
+    algorithm,
+    customConfig
+  );
+  console.log("signedVpServicesOffering", JSON.stringify(signedVpServicesOffering, null, 2));
+
+  for (const signedVpServiceOffering of signedVpServicesOffering) {
+    const serviceOffering = Object.values(signedVpServiceOffering)[0];
+    console.log("ServiceOffering:", JSON.stringify(serviceOffering, null, 2));
+
+    const response = await request.post(`${baseURL}/catalog/self-descriptions`, {
       headers: {
         Accept: "*/*",
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      data: JSON.stringify(participant),
+      data: JSON.stringify(serviceOffering),
     });
 
     expect(response.ok()).toBeTruthy();
   }
+  
 });

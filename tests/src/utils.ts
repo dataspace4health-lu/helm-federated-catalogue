@@ -122,3 +122,60 @@ export async function signListJsonLd(list, algorithm, config) {
   }
   return signedList;
 }
+
+export async function createListServicesOffering(
+  listCreatedParticipants,
+  servicesConfig,
+  config
+) {
+  const serviceOfferings: any = [];
+  //console.log("listCreatedParticipants", JSON.stringify(listCreatedParticipants, null, 2));
+  listCreatedParticipants.forEach((participant) => {
+    //console.log("Participant", participant);
+    var particpantName = Object.keys(participant)[0];
+    //console.log("particpantName", particpantName);
+    var configParticipant = config[particpantName];
+    //console.log("configParticipant", configParticipant);
+
+    if (servicesConfig[particpantName]) {
+      const servicesConfigData = servicesConfig[particpantName];
+      servicesConfigData.forEach((service) => {
+        console.log("service", service);
+        var serviceData = {
+          "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/security/suites/jws-2020/v1",
+            "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#",
+          ],
+          id: `${service["idPrefix"]}/${uuid4()}/service.json`,
+          type: "VerifiableCredential",
+          issuer: `${config[particpantName]["issuer"]}/${uuid4()}`,
+          issuanceDate: new Date().toISOString(),
+          credentialSubject: {
+            type: "gx:ServiceOffering",
+            "gx:providedBy": {
+              id: participant[particpantName].verifiableCredential[0].id,
+            },
+            "gx:policy": service["gx:policy"],
+            "gx:termsAndConditions": service["gx:termsAndConditions"],
+            "gx:dataAccountExport": {
+              "gx:requestType": "API",
+              "gx:accessType": "digital",
+              "gx:formatType": "application/json",
+            },
+            //"gx:serviceTitle": service["gx:serviceTitle"],
+            //"gx:serviceDescription": service["gx:serviceDescription"],
+            //"gx:serviceType": service["gx:serviceType"],
+            //"gx:serviceEndpoint": service["gx:serviceEndpoint"],
+            id: `${service["idPrefix"]}/${uuid4()}/service.json`,
+          },
+        };
+        //console.log("serviceData", JSON.stringify(serviceData, null, 2));
+        serviceOfferings.push({ [particpantName]: serviceData });
+      });
+    }
+  });
+  //console.log("serviceOfferings", JSON.stringify(serviceOfferings, null, 2));
+
+  return serviceOfferings;
+}
