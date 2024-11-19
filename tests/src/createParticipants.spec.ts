@@ -70,7 +70,6 @@ test("OIDC Authentication", async ({ request, baseURL }) => {
 
 test("Create Participants", async ({ request, baseURL }) => {
   const vcParticipants = await createListParticipants(customConfig);
-
   const signedVcParticipants = await signListJsonLd(
     vcParticipants,
     algorithm,
@@ -79,26 +78,22 @@ test("Create Participants", async ({ request, baseURL }) => {
   // var VpParticipants: any = [];
   signedVcParticipants.forEach((signedVcParticipant) => {
     var entity = Object.keys(signedVcParticipant)[0];
-    // console.log("key", key);
-    // console.log("signedVcParticipant", signedVcParticipant);
     VpParticipants.push({
       [entity]: {
-        "@context": "https://www.w3.org/2018/credentials/v1",
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
         type: ["VerifiablePresentation"],
         verifiableCredential: [signedVcParticipant[entity]],
       },
     });
   });
-
   const signedVpParticipants = await signListJsonLd(
     VpParticipants,
     algorithm,
     customConfig
   );
-  //console.log("signedVpParticipants", JSON.stringify(signedVpParticipants, null, 2));
+  console.log("signedVpParticipants", JSON.stringify(signedVpParticipants, null, 2));
   for (const signedVpParticipant of signedVpParticipants) {
     const participant = Object.values(signedVpParticipant)[0];
-    //console.log("Participant:", JSON.stringify(participant, null, 2));
 
     // const response = await request.post(`${baseURL}/catalog/participants`, {
     //   headers: {
