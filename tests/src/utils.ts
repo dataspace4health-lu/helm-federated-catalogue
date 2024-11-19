@@ -1,5 +1,6 @@
 import * as jose from "jose";
 import { v4 as uuid4 } from "uuid";
+import { JsonWebSignature2020Signer } from "@gaia-x/json-web-signature-2020";
 
 export async function loadKeyPair() {
   const { publicKey, privateKey } = await jose.generateKeyPair("PS256");
@@ -50,32 +51,15 @@ export async function authenticate(request: any, baseURL: string) {
 export async function signJsonLd(credential, algorithm, config, entity) {
   // Generate a key pair
   const { publicKey, privateKey } = await jose.generateKeyPair(algorithm);
-  const jwk = await jose.exportJWK(privateKey);
-  jwk.kid = `${config[entity]["issuer"]}#key-0`;
-  const pk = await jose.exportPKCS8(privateKey);
+  const privateKeyPem = await jose.exportPKCS8(privateKey);
 
-  // Convert the credential to a JSON string and then to a Buffer
-  const payload = Buffer.from(JSON.stringify(credential));
+  const signer = new JsonWebSignature2020Signer({
+    privateKey: await jose.importPKCS8(privateKeyPem, algorithm),
+    privateKeyAlg: algorithm,
+    verificationMethod: `${config[entity]["issuer"]}#key-0`,
+  });
 
-  // Sign the payload
-  const jws = await new jose.CompactSign(payload)
-    .setProtectedHeader({
-      alg: algorithm,
-      kid: jwk.kid,
-    })
-    .sign(privateKey);
-
-  // Add the proof to the credential
-  const signedCredential = {
-    ...credential[entity],
-    proof: {
-      type: "JsonWebSignature2020",
-      created: new Date().toISOString(),
-      proofPurpose: "assertionMethod",
-      verificationMethod: jwk.kid,
-      jws: jws,
-    },
-  };
+  const signedCredential = await signer.sign(credential[entity]);
 
   return signedCredential;
 }
@@ -105,6 +89,7 @@ export async function createListParticipants(config) {
         "gx:legalAddress": {
           "gx:countrySubdivisionCode": config[entity]["legalAddress"],
         },
+        "gx-terms-and-conditions:gaiaxTermsAndConditions": uuid4(),
         type: "gx:LegalParticipant",
       },
     };
