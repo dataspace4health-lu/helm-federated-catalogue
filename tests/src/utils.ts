@@ -1,15 +1,22 @@
 import * as jose from "jose";
 import { v4 as uuid4 } from "uuid";
 import { JsonWebSignature2020Signer } from "@gaia-x/json-web-signature-2020";
+import fs from 'fs/promises';
+
+
+export async function generateKeyPair(algorithm) {
+  const { publicKey, privateKey } = await jose.generateKeyPair(algorithm);
+  const privateKeyPem = await jose.exportPKCS8(privateKey);
+  const publicKeyPem = await jose.exportSPKI(publicKey);
+
+
+  return { publicKeyPem, privateKeyPem };
+}
 
 export async function loadKeyPair() {
-  const { publicKey, privateKey } = await jose.generateKeyPair("PS256");
-  //console.log("Generated Public Key (PEM):", await jose.exportSPKI(publicKey));
-  //   console.log(
-  //     "Generated Private Key (PEM):",
-  //     await jose.exportPKCS8(privateKey)
-  //   );
-  return { publicKey, privateKey };
+const privateKeyPem= await fs.readFile("src/prk.ss.pem", "utf-8");
+
+  return {privateKeyPem} ;
 }
 
 export async function authenticate(request: any, baseURL: string) {
@@ -49,12 +56,19 @@ export async function authenticate(request: any, baseURL: string) {
 }
 
 export async function signJsonLd(credential, algorithm, config, entity) {
-  // Generate a key pair
-  const { publicKey, privateKey } = await jose.generateKeyPair(algorithm);
-  const privateKeyPem = await jose.exportPKCS8(privateKey);
+  // Generate a key pair or load an existing one.
+  // Scenario 1: Generate a new key pair dynamically
+  const { publicKeyPem, privateKeyPem } = await generateKeyPair(algorithm);
+  const pk = await jose.importPKCS8(privateKeyPem, algorithm);
+
+  // Scenario 2: Load an existing key pair from a file
+  // Note: The loaded key here is of a different algorithm (RS256),
+  // so ensure the code is updated accordingly to handle this algorithm.
+  // const { privateKeyPem } = await loadKeyPair();
+  // const pk = await jose.importPKCS8(privateKeyPem, "RS256");
 
   const signer = new JsonWebSignature2020Signer({
-    privateKey: await jose.importPKCS8(privateKeyPem, algorithm),
+    privateKey: pk,
     privateKeyAlg: algorithm,
     verificationMethod: `${config[entity]["issuer"]}#key-0`,
   });
