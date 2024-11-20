@@ -66,10 +66,10 @@ test("OIDC Authentication", async ({ request, baseURL }) => {
   token = body.access_token;
 });
 
-// This test is to create participants in the catalog
-// I will be self signed generated key And since the 
-// validation in FC of the key is active, this test will
-// return failaire
+// This test is designed to create participants in the catalog.
+// It uses a self-signed generated key. 
+// Since the key validation in the Federated Catalog (FC) is active, 
+// this test is expected to fail.
 
 test("Create Participants", async ({ request, baseURL }) => {
   const vcParticipants = await createListParticipants(customConfig);
@@ -98,22 +98,22 @@ test("Create Participants", async ({ request, baseURL }) => {
   for (const signedVpParticipant of signedVpParticipants) {
     const participant = Object.values(signedVpParticipant)[0];
 
-    // const response = await request.post(`${baseURL}/catalog/participants`, {
-    //   headers: {
-    //     Accept: "*/*",
-    //     "Content-Type": "application/json",
-    //     Authorization: `Bearer ${token}`,
-    //   },
-    //   data: JSON.stringify(participant),
-    // });
+    const response = await request.post(`${baseURL}/catalog/participants`, {
+      headers: {
+        Accept: "*/*",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: JSON.stringify(participant),
+    });
 
-    // expect(response.ok()).toBeTruthy();
+    expect(response.ok()).toBeFalsy();
   }
 });
 test("Create Service Offering for Participants", async ({ request, baseURL }) => {
-  const serviceOfferings = await createListServicesOffering(VpParticipants, serviceOfferingConfig, customConfig);
+  const vcServiceOfferings = await createListServicesOffering(VpParticipants, serviceOfferingConfig, customConfig);
   const signedVcServicesOffering = await signListJsonLd(
-    serviceOfferings,
+    vcServiceOfferings,
     algorithm,
     customConfig
   );
