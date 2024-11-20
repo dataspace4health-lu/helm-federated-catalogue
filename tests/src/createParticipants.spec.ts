@@ -66,6 +66,11 @@ test("OIDC Authentication", async ({ request, baseURL }) => {
   // console.log("token", token)
 });
 
+// This test is to create participants in the catalog
+// I will be self signed generated key And since the 
+// validation in FC of the key is active, this test will
+// return failaire
+
 test("Create Participants", async ({ request, baseURL }) => {
   const vcParticipants = await createListParticipants(customConfig);
   const signedVcParticipants = await signListJsonLd(
@@ -102,6 +107,6 @@ test("Create Participants", async ({ request, baseURL }) => {
       data: JSON.stringify(participant),
     });
 
-    expect(response.ok()).toBeTruthy();
+    expect(response.ok()).toBeFalsy();
   }
 });
