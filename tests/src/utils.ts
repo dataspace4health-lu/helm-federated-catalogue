@@ -4,11 +4,6 @@ import { JsonWebSignature2020Signer } from "@gaia-x/json-web-signature-2020";
 
 export async function loadKeyPair() {
   const { publicKey, privateKey } = await jose.generateKeyPair("PS256");
-  //console.log("Generated Public Key (PEM):", await jose.exportSPKI(publicKey));
-  //   console.log(
-  //     "Generated Private Key (PEM):",
-  //     await jose.exportPKCS8(privateKey)
-  //   );
   return { publicKey, privateKey };
 }
 
@@ -114,18 +109,13 @@ export async function createListServicesOffering(
   config
 ) {
   const serviceOfferings: any = [];
-  //console.log("listCreatedParticipants", JSON.stringify(listCreatedParticipants, null, 2));
   listCreatedParticipants.forEach((participant) => {
-    //console.log("Participant", participant);
     var particpantName = Object.keys(participant)[0];
-    //console.log("particpantName", particpantName);
     var configParticipant = config[particpantName];
-    //console.log("configParticipant", configParticipant);
 
     if (servicesConfig[particpantName]) {
       const servicesConfigData = servicesConfig[particpantName];
       servicesConfigData.forEach((service) => {
-        console.log("service", service);
         var serviceData = {
           "@context": [
             "https://www.w3.org/2018/credentials/v1",
@@ -155,12 +145,10 @@ export async function createListServicesOffering(
             id: `${service["idPrefix"]}/${uuid4()}/service.json`,
           },
         };
-        //console.log("serviceData", JSON.stringify(serviceData, null, 2));
         serviceOfferings.push({ [particpantName]: serviceData });
       });
     }
   });
-  //console.log("serviceOfferings", JSON.stringify(serviceOfferings, null, 2));
 
   return serviceOfferings;
 }

@@ -13,7 +13,6 @@ const algorithm = "ES256";
 var VpParticipants: any = [];
 
 let token;
-//console.log("customConfig", customConfig);
 
 test("OIDC Authentication", async ({ request, baseURL }) => {
   const authUrl =
@@ -65,7 +64,6 @@ test("OIDC Authentication", async ({ request, baseURL }) => {
   expect(body.access_token).not.toBe("");
 
   token = body.access_token;
-  // console.log("token", token)
 });
 
 test("Create Participants", async ({ request, baseURL }) => {
@@ -109,21 +107,17 @@ test("Create Participants", async ({ request, baseURL }) => {
 });
 test("Create Service Offering for Participants", async ({ request, baseURL }) => {
   const serviceOfferings = await createListServicesOffering(VpParticipants, serviceOfferingConfig, customConfig);
-  //console.log("serviceOfferings", JSON.stringify(serviceOfferings, null, 2));
   const signedVcServicesOffering = await signListJsonLd(
     serviceOfferings,
     algorithm,
     customConfig
   );
-  //console.log("signedVcServiceOffering", JSON.stringify(signedVcServicesOffering, null, 2));
   var VpServicesOffering: any = [];
   signedVcServicesOffering.forEach((signedVcServiceOffering) => {
     var entity = Object.keys(signedVcServiceOffering)[0];
-    // console.log("key", key);
-    // console.log("signedVcParticipant", signedVcParticipant);
     VpServicesOffering.push({
       [entity]: {
-        "@context": "https://www.w3.org/2018/credentials/v1",
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
         type: ["VerifiablePresentation"],
         verifiableCredential: [signedVcServiceOffering[entity]],
       },
@@ -139,8 +133,6 @@ test("Create Service Offering for Participants", async ({ request, baseURL }) =>
 
   for (const signedVpServiceOffering of signedVpServicesOffering) {
     const serviceOffering = Object.values(signedVpServiceOffering)[0];
-    console.log("ServiceOffering:", JSON.stringify(serviceOffering, null, 2));
-
     const response = await request.post(`${baseURL}/catalog/self-descriptions`, {
       headers: {
         Accept: "*/*",
