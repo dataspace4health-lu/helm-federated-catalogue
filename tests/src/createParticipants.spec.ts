@@ -1,10 +1,15 @@
 import { test, expect } from "@playwright/test";
-import { createListParticipants, createListServicesOffering, signListJsonLd } from "./utils";
+import {
+  createListParticipants,
+  signListJsonLd,
+  updatedSelfDescription,
+  createListServicesOffering
+} from "./utils";
 import fs from "fs";
 import path from "path";
 
-
-const customConfig = JSON.parse(fs.readFileSync(path.resolve("src/customConfig.json"), "utf-8")
+const customConfig = JSON.parse(
+  fs.readFileSync(path.resolve("src/customConfig.json"), "utf-8")
 );
 const serviceOfferingConfig = JSON.parse(fs.readFileSync(path.resolve("src/serviceOfferingConfig.json"), "utf-8"));
 // import config from "../playwright.config";
@@ -14,102 +19,252 @@ var VpParticipants: any = [];
 
 let token;
 
-test("OIDC Authentication", async ({ request, baseURL }) => {
-  const authUrl =
-    `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/auth?` +
-    `response_type=code&` +
-    `client_id=federated-catalogue&` +
-    `scope=openid&` +
-    `redirect_uri=${baseURL}/oidc/auth/callback`;
-  let response = await request.get(authUrl, {
-    maxRedirects: 0,
-  });
+let listParticipants: any = [];
 
-  if (response.status() != 302) {
-    // Get post link from response and submit log-in request
-    let body = await response.text();
-    const match = body.match(
-      /<form id="kc-form-login".*action="([^"]+)"[^>]*>/
-    );
-    response = await request.post(match[1], {
+test.describe("Federated Catalogue Participant Management Tests", () => {
+  test("OIDC Authentication", async ({ request, baseURL }) => {
+    console.log("\n--- Starting OIDC Authentication Test ---");
+
+    const authUrl =
+      `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/auth?` +
+      `response_type=code&` +
+      `client_id=federated-catalogue&` +
+      `scope=openid&` +
+      `redirect_uri=${baseURL}/oidc/auth/callback`;
+
+    console.log("Authenticating via URL:", authUrl);
+
+    let response = await request.get(authUrl, {
       maxRedirects: 0,
+    });
+
+    if (response.status() !== 302) {
+      const body = await response.text();
+      const match = body.match(
+        /<form id="kc-form-login".*action="([^"]+)"[^>]*>/
+      );
+      if (!match) {
+        console.error("Login form not found.");
+        expect(match).toBeDefined();
+      }
+
+      response = await request.post(match[1], {
+        maxRedirects: 0,
+        form: {
+          username: "testuser",
+          password: "xfsc4Ntt!",
+          credentialId: "",
+        },
+      });
+    }
+
+    expect(response.status()).toBe(302);
+
+    const headers = await response.headers();
+    const code = new URL(headers["location"]).searchParams.get("code");
+    expect(code).toBeDefined();
+    expect(code).not.toBe("");
+
+    const tokenUrl = `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/token`;
+    response = await request.post(tokenUrl, {
       form: {
-        username: "testuser",
-        password: "xfsc4Ntt!",
-        credentialId: "",
+        grant_type: "authorization_code",
+        client_id: "federated-catalogue",
+        client_secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9",
+        code: code,
+        redirect_uri: `${baseURL}/oidc/auth/callback`,
       },
     });
-  }
 
-  expect(response.status()).toBe(302);
+    const body = await response.json();
+    token = body.access_token;
 
-  const headers = await response.headers();
-  const code = new URL(headers["location"]).searchParams.get("code");
-  expect(code).toBeDefined();
-  expect(code).not.toBe("");
-
-  const tokenUrl = `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/token`;
-  response = await request.post(tokenUrl, {
-    form: {
-      grant_type: "authorization_code",
-      client_id: "federated-catalogue",
-      client_secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9",
-      code: code,
-      redirect_uri: `${baseURL}/oidc/auth/callback`,
-    },
+    console.log("Access Token received:", token);
+    expect(token).toBeDefined();
+    expect(token).not.toBe("");
+    console.log("--- OIDC Authentication Test Completed ---\n");
   });
 
-  const body = await response.json();
-  expect(body.access_token).toBeDefined();
-  expect(body.access_token).not.toBe("");
+  test("Create Participants", async ({ request, baseURL }) => {
+    console.log("\n--- Starting Create Participants Test ---");
 
-  token = body.access_token;
-});
+    const vcParticipants = await createListParticipants(customConfig);
+    console.log("Generated VC Participants:", vcParticipants);
 
-// This test is designed to create participants in the catalog.
-// It uses a self-signed generated key. 
-// Since the key validation in the Federated Catalog (FC) is active, 
-// this test is expected to fail.
+    const signedVcParticipants = await signListJsonLd(
+      vcParticipants,
+      algorithm,
+      customConfig
+    );
+    console.log("Signed VC Participants:", signedVcParticipants);
 
-test("Create Participants", async ({ request, baseURL }) => {
-  const vcParticipants = await createListParticipants(customConfig);
-  const signedVcParticipants = await signListJsonLd(
-    vcParticipants,
-    algorithm,
-    customConfig
-  );
-  // var VpParticipants: any = [];
-  signedVcParticipants.forEach((signedVcParticipant) => {
-    var entity = Object.keys(signedVcParticipant)[0];
-    VpParticipants.push({
-      [entity]: {
-        "@context": ["https://www.w3.org/2018/credentials/v1"],
-        type: ["VerifiablePresentation"],
-        verifiableCredential: [signedVcParticipant[entity]],
-      },
+    const VpParticipants = signedVcParticipants.map((signedVcParticipant) => {
+      const entity = Object.keys(signedVcParticipant)[0];
+      return {
+        [entity]: {
+          "@context": ["https://www.w3.org/2018/credentials/v1"],
+          type: ["VerifiablePresentation"],
+          verifiableCredential: [signedVcParticipant[entity]],
+        },
+      };
     });
-  });
-  const signedVpParticipants = await signListJsonLd(
-    VpParticipants,
-    algorithm,
-    customConfig
-  );
-  console.log("signedVpParticipants", JSON.stringify(signedVpParticipants, null, 2));
-  for (const signedVpParticipant of signedVpParticipants) {
-    const participant = Object.values(signedVpParticipant)[0];
 
-    const response = await request.post(`${baseURL}/catalog/participants`, {
+    const signedVpParticipants = await signListJsonLd(
+      VpParticipants,
+      algorithm,
+      customConfig
+    );
+    console.log("Signed VP Participants:", signedVpParticipants);
+
+    for (const signedVpParticipant of signedVpParticipants) {
+      const participant = Object.values(signedVpParticipant)[0];
+
+      console.log("Sending Participant to FC:", participant);
+
+      const response = await request.post(`${baseURL}/catalog/participants`, {
+        headers: {
+          Accept: "*/*",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        data: JSON.stringify(participant),
+      });
+
+      console.log("Response for Create Participant:", await response.json());
+      expect(response.ok()).toBeTruthy();
+    }
+
+    console.log("--- Create Participants Test Completed ---\n");
+  });
+
+  test("Get List of Participants", async ({ request }) => {
+    console.log("\n--- Starting Get List of Participants Test ---");
+
+    const response = await request.get(`catalog/participants`, {
       headers: {
-        Accept: "*/*",
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      data: JSON.stringify(participant),
     });
 
-    expect(response.ok()).toBeFalsy();
-  }
+    const participants = await response.json();
+    listParticipants = participants.items;
+
+    console.log("Total Participants Retrieved:", participants.totalCount);
+    expect(response.ok()).toBeTruthy();
+
+    console.log("--- Get List of Participants Test Completed ---\n");
+  });
+
+  test("Get Created Participant", async ({ request }) => {
+    console.log("\n--- Starting Get Created Participant Test ---");
+
+    if (listParticipants.length > 0) {
+      const participant = listParticipants[0];
+      const fullId = participant.id;
+      const extractedId = fullId.replace("did:web:dataspace4health.local/", "");
+
+      console.log("Fetching Participant with ID:", extractedId);
+
+      const response = await request.get(
+        `catalog/participants/${extractedId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const responseBody = await response.json();
+      console.log("Participant Details:", responseBody);
+
+      expect(response.ok()).toBeTruthy();
+    } else {
+      console.warn("No participants found. Skipping test.");
+      test.skip();
+    }
+
+    console.log("--- Get Created Participant Test Completed ---\n");
+  });
+
+  test("Update Participant", async ({ request }) => {
+    console.log("\n--- Starting Update Participant Test ---");
+
+    if (listParticipants.length > 0) {
+      const participant = listParticipants[0];
+      const fullId = participant.id;
+      const selfDescriptionString = participant.selfDescription;
+
+      const extractedId = fullId.replace("did:web:dataspace4health.local/", "");
+      const selfDescription = JSON.parse(selfDescriptionString);
+
+      console.log("Updating Participant with ID:", extractedId);
+
+      const newSelfDescription = await updatedSelfDescription(
+        selfDescription,
+        algorithm
+      );
+
+      console.log("Updated Self Description:", newSelfDescription);
+
+      const response = await request.put(
+        `catalog/participants/${extractedId}`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          data: JSON.stringify(newSelfDescription),
+        }
+      );
+
+      console.log("Response for Update Participant:", await response.json());
+      expect(response.ok()).toBeTruthy();
+    } else {
+      console.warn("No participants found. Skipping test.");
+      test.skip();
+    }
+
+    console.log("--- Update Participant Test Completed ---\n");
+  });
 });
+
+test.describe("Cleaning Tests", () => {
+  test("Delete All Participants", async ({ request }) => {
+    console.log("\n--- Starting Delete All Participants Test ---");
+
+    if (listParticipants.length > 0) {
+      for (const participant of listParticipants) {
+        const fullId = participant.id;
+        const extractedId = fullId.replace(
+          "did:web:dataspace4health.local/",
+          ""
+        );
+
+        console.log("Deleting Participant with ID:", extractedId);
+
+        const response = await request.delete(
+          `catalog/participants/${extractedId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log("Response for Delete Participant:", await response.json());
+        expect(response.ok()).toBeTruthy();
+      }
+    } else {
+      console.warn("No participants found. Skipping test.");
+      test.skip();
+    }
+
+    console.log("--- Delete All Participants Test Completed ---\n");
+  });
+});
+
+
 test("Create Service Offering for Participants", async ({ request, baseURL }) => {
   const vcServiceOfferings = await createListServicesOffering(VpParticipants, serviceOfferingConfig, customConfig);
   const signedVcServicesOffering = await signListJsonLd(

@@ -203,3 +203,43 @@ export async function createListServicesOffering(
 
   return serviceOfferings;
 }
+export async function updatedSelfDescription(selfDescription, algorithm) {
+  // console.log("selfDescription to update", selfDescription);
+  // console.log("Verifable credential to update", selfDescription.verifiableCredential);
+  var vc = selfDescription.verifiableCredential[0];
+  // console.log("VC to update", vc);
+  var credentialSubject =
+    selfDescription.verifiableCredential[0].credentialSubject;
+  credentialSubject["gx:legalName"] =
+    credentialSubject["gx:legalName"] + " Updated Name";
+  const updateVC = {
+    "@context": vc["@context"],
+    id: vc.id,
+    type: ["VerifiableCredential"],
+    issuer: vc.issuer,
+    issuanceDate: new Date().toISOString(),
+    credentialSubject: credentialSubject,
+  };
+  // console.log("Updated VC", updateVC);
+
+  const { publicKeyPem, privateKeyPem } = await generateKeyPair(algorithm);
+  const pk = await jose.importPKCS8(privateKeyPem, algorithm);
+
+  const signer = await new JsonWebSignature2020Signer({
+    privateKey: pk,
+    privateKeyAlg: algorithm,
+    verificationMethod: `${vc["issuer"]}#key-0`,
+  });
+
+  const signedVC = await signer.sign(updateVC);
+  // console.log("Signed credential", signedVC);
+  const updateVP = {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    type: ["VerifiablePresentation"],
+    verifiableCredential: [signedVC],
+  };
+  const signedVP = await signer.sign(updateVP);
+  // console.log("Signed presentation", signedVP);
+
+  return signedVP;
+}
