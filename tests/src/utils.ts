@@ -1,22 +1,20 @@
 import * as jose from "jose";
 import { v4 as uuid4 } from "uuid";
 import { JsonWebSignature2020Signer } from "@gaia-x/json-web-signature-2020";
-import fs from 'fs/promises';
-
+import fs from "fs/promises";
 
 export async function generateKeyPair(algorithm) {
   const { publicKey, privateKey } = await jose.generateKeyPair(algorithm);
   const privateKeyPem = await jose.exportPKCS8(privateKey);
   const publicKeyPem = await jose.exportSPKI(publicKey);
 
-
   return { publicKeyPem, privateKeyPem };
 }
 
 export async function loadKeyPair() {
-const privateKeyPem= await fs.readFile("src/prk.ss.pem", "utf-8");
+  const privateKeyPem = await fs.readFile("src/prk.ss.pem", "utf-8");
 
-  return {privateKeyPem} ;
+  return { privateKeyPem };
 }
 
 export async function authenticate(request: any, baseURL: string) {
@@ -120,4 +118,45 @@ export async function signListJsonLd(list, algorithm, config) {
     signedList.push({ [entity]: signedItem });
   }
   return signedList;
+}
+
+export async function updatedSelfDescription(selfDescription, algorithm) {
+  // console.log("selfDescription to update", selfDescription);
+  // console.log("Verifable credential to update", selfDescription.verifiableCredential);
+  var vc = selfDescription.verifiableCredential[0];
+  // console.log("VC to update", vc);
+  var credentialSubject =
+    selfDescription.verifiableCredential[0].credentialSubject;
+  credentialSubject["gx:legalName"] =
+    credentialSubject["gx:legalName"] + " Updated Name";
+  const updateVC = {
+    "@context": vc["@context"],
+    id: vc.id,
+    type: ["VerifiableCredential"],
+    issuer: vc.issuer,
+    issuanceDate: new Date().toISOString(),
+    credentialSubject: credentialSubject,
+  };
+  // console.log("Updated VC", updateVC);
+
+  const { publicKeyPem, privateKeyPem } = await generateKeyPair(algorithm);
+  const pk = await jose.importPKCS8(privateKeyPem, algorithm);
+
+  const signer = await new JsonWebSignature2020Signer({
+    privateKey: pk,
+    privateKeyAlg: algorithm,
+    verificationMethod: `${vc["issuer"]}#key-0`,
+  });
+
+  const signedVC = await signer.sign(updateVC);
+  // console.log("Signed credential", signedVC);
+  const updateVP = {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    type: ["VerifiablePresentation"],
+    verifiableCredential: [signedVC],
+  };
+  const signedVP = await signer.sign(updateVP);
+  // console.log("Signed presentation", signedVP);
+
+  return signedVP;
 }
