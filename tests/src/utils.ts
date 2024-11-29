@@ -2,6 +2,7 @@ import * as jose from "jose";
 import { v4 as uuid4 } from "uuid";
 import { JsonWebSignature2020Signer } from "@gaia-x/json-web-signature-2020";
 import fs from "fs/promises";
+import axios from "axios";
 
 /**
  * Generates a cryptographic key pair using the specified algorithm.
@@ -88,10 +89,40 @@ export async function signJsonLd(credential, algorithm, config, entity) {
   const pk = await jose.importPKCS8(privateKeyPem, "PS256");
   */
 
+  const myDocumentLoader = async (url) => {
+    const maxRetries = 5; // Number of retry attempts
+    const retryDelay = 15000; // Wait time in milliseconds between retries
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await axios.get(url, { maxRedirects: 5 });
+        return {
+          contextUrl: null,
+          documentUrl: url,
+          document: response.data,
+        };
+      } catch (e) {
+        if (e.response && e.response.status === 429 && attempt < maxRetries) {
+          console.warn(
+            `Attempt ${attempt} failed with status 429. Retrying after ${retryDelay}ms...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        } else {
+          console.error(
+            `Attempt ${attempt} failed with error: ${e.message || e}`
+          );
+          throw e; // Rethrow if it's not a 429 or retries are exhausted
+        }
+      }
+    }
+  };
+
   const signer = new JsonWebSignature2020Signer({
     privateKey: pk,
     privateKeyAlg: algorithm,
     verificationMethod: `${config[entity]["issuer"]}#key-0`,
+    documentLoader: myDocumentLoader,
+    safe: false,
   });
 
   const signedCredential = await signer.sign(credential[entity]);
@@ -178,7 +209,7 @@ export async function createListServicesOffering(
             "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#",
           ],
           id: `${service["idPrefix"]}/${uuid4()}/service.json`,
-          type: "VerifiableCredential",
+          type: ["VerifiableCredential"],
           issuer: `${config[particpantName]["issuer"]}/${uuid4()}`,
           issuanceDate: new Date().toISOString(),
           credentialSubject: {
