@@ -11,6 +11,7 @@ const customConfig = JSON.parse(
   fs.readFileSync(path.resolve("src/customConfig.json"), "utf-8")
 );
 const algorithm = "ES256";
+var VpParticipants: any = [];
 
 let token;
 
@@ -27,11 +28,9 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
       `scope=openid&` +
       `redirect_uri=${baseURL}/oidc/auth/callback`;
 
-    console.log("Authenticating via URL:", authUrl);
+    console.log("Authenticating via OIDC...");
 
-    let response = await request.get(authUrl, {
-      maxRedirects: 0,
-    });
+    let response = await request.get(authUrl, { maxRedirects: 0 });
 
     if (response.status() !== 302) {
       const body = await response.text();
@@ -74,7 +73,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
     const body = await response.json();
     token = body.access_token;
 
-    console.log("Access Token received:", token);
+    console.log("Access Token received successfully.");
     expect(token).toBeDefined();
     expect(token).not.toBe("");
     console.log("--- OIDC Authentication Test Completed ---\n");
@@ -84,16 +83,19 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
     console.log("\n--- Starting Create Participants Test ---");
 
     const vcParticipants = await createListParticipants(customConfig);
-    console.log("Generated VC Participants:", vcParticipants);
+    console.log("Generated VC Participants. Count:", vcParticipants.length);
 
     const signedVcParticipants = await signListJsonLd(
       vcParticipants,
       algorithm,
       customConfig
     );
-    console.log("Signed VC Participants:", signedVcParticipants);
+    console.log(
+      "VC Participants signed successfully. Count:",
+      signedVcParticipants.length
+    );
 
-    const VpParticipants = signedVcParticipants.map((signedVcParticipant) => {
+    VpParticipants = signedVcParticipants.map((signedVcParticipant) => {
       const entity = Object.keys(signedVcParticipant)[0];
       return {
         [entity]: {
@@ -109,12 +111,15 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
       algorithm,
       customConfig
     );
-    console.log("Signed VP Participants:", signedVpParticipants);
+    console.log(
+      "VP Participants signed successfully. Count:",
+      signedVpParticipants.length
+    );
 
     for (const signedVpParticipant of signedVpParticipants) {
       const participant = Object.values(signedVpParticipant)[0];
 
-      console.log("Sending Participant to FC:", participant);
+      console.log("Sending Participant to FC...");
 
       const response = await request.post(`${baseURL}/catalog/participants`, {
         headers: {
@@ -125,7 +130,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
         data: JSON.stringify(participant),
       });
 
-      console.log("Response for Create Participant:", await response.json());
+      console.log("Participant creation response:", response.status());
       expect(response.ok()).toBeTruthy();
     }
 
@@ -144,7 +149,10 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
     const participants = await response.json();
     listParticipants = participants.items;
 
-    console.log("Total Participants Retrieved:", participants.totalCount);
+    console.log(
+      "Participants retrieved successfully. Count:",
+      participants.totalCount
+    );
     expect(response.ok()).toBeTruthy();
 
     console.log("--- Get List of Participants Test Completed ---\n");
@@ -170,8 +178,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
       );
 
       const responseBody = await response.json();
-      console.log("Participant Details:", responseBody);
-
+      console.log("Participant fetched successfully.");
       expect(response.ok()).toBeTruthy();
     } else {
       console.warn("No participants found. Skipping test.");
@@ -199,7 +206,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
         algorithm
       );
 
-      console.log("Updated Self Description:", newSelfDescription);
+      console.log("Self-description updated.");
 
       const response = await request.put(
         `catalog/participants/${extractedId}`,
@@ -213,7 +220,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
         }
       );
 
-      console.log("Response for Update Participant:", await response.json());
+      console.log("Participant update response:", response.status());
       expect(response.ok()).toBeTruthy();
     } else {
       console.warn("No participants found. Skipping test.");
@@ -229,15 +236,14 @@ test.describe("Cleaning Tests", () => {
     console.log("\n--- Starting Delete All Participants Test ---");
 
     if (listParticipants.length > 0) {
+      console.log(`Found ${listParticipants.length} Participants to Delete.`);
       for (const participant of listParticipants) {
-        const fullId = participant.id;
-        const extractedId = fullId.replace(
+        const extractedId = participant.id.replace(
           "did:web:dataspace4health.local/",
           ""
         );
 
-        console.log("Deleting Participant with ID:", extractedId);
-
+        console.log(`Deleting Participant with ID: ${extractedId}`);
         const response = await request.delete(
           `catalog/participants/${extractedId}`,
           {
@@ -247,7 +253,9 @@ test.describe("Cleaning Tests", () => {
           }
         );
 
-        console.log("Response for Delete Participant:", await response.json());
+        console.log(
+          `Delete Participant Response Status: ${response.status()}`
+        );
         expect(response.ok()).toBeTruthy();
       }
     } else {
