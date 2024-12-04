@@ -274,3 +274,84 @@ export async function updatedSelfDescription(selfDescription, algorithm) {
 
   return signedVP;
 }
+
+
+export async function signListJsonLdJwt(list, algorithm, config, type) {
+  const signedList: any = [];
+  for (const item of list) {
+    const entity = Object.keys(item)[0];
+    const signedItem = await signJsonLdJwt(item, algorithm, config, entity, type);
+    signedList.push({ [entity]: signedItem });
+  }
+  return signedList;
+}
+export async function signJsonLdJwt(credential, algorithm, config, entity, type) {
+  // Scenario 1: Generate a new key pair dynamically
+  const { publicKey, privateKey } = await jose.generateKeyPair(algorithm);
+  const jwk = await jose.exportJWK(privateKey);
+  //   console.log(jwk);
+  jwk.kid = `${config[entity]["issuer"]}#key-0`
+  jwk.iss = `${config[entity]["issuer"]}`;
+
+  // console.log(jwk);
+
+  // Generate a JWT token
+  const jwt = await new jose.SignJWT(credential[entity])
+    .setProtectedHeader({
+      alg: algorithm,
+      typ: type + "+ld+json+jwt",
+      cty: type + "+ld+json",
+      iss: jwk.iss,
+      kid: jwk.kid,
+    })
+    // .setIssuer(config["NTT"]["issuer"])
+    // .setIssuedAt()
+    // .setExpirationTime("90d")
+    .sign(privateKey);
+
+    return jwt;
+}
+export async function createListServicesOfferingForJwtFormat(
+  listCreatedParticipants,
+  servicesConfig,
+  config
+) {
+  const serviceOfferings: any = [];
+  listCreatedParticipants.forEach((participant) => {
+    const particpantName = Object.keys(participant)[0];
+    const configParticipant = config[particpantName];
+
+    if (servicesConfig[particpantName]) {
+      const servicesConfigData = servicesConfig[particpantName];
+      servicesConfigData.forEach((service) => {
+        const serviceData = {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://www.w3.org/ns/credentials/examples/v2",
+          ],
+          id: `${service["idPrefix"]}/${uuid4()}/service.json`,
+          type: ["VerifiableCredential"],
+          issuer: `${config[particpantName]["issuer"]}/${uuid4()}`,
+          validFrom: new Date().toISOString(),
+          credentialSubject: {
+            type: "gx:ServiceOffering",
+            "gx:providedBy": {
+              id: participant[particpantName].id,
+            },
+            "gx:policy": service["gx:policy"],
+            "gx:termsAndConditions": service["gx:termsAndConditions"],
+            "gx:dataAccountExport": {
+              "gx:requestType": "API",
+              "gx:accessType": "digital",
+              "gx:formatType": "application/json",
+            },
+            id: `${service["idPrefix"]}/${uuid4()}/service.json`,
+          },
+        };
+        serviceOfferings.push({ [particpantName]: serviceData });
+      });
+    }
+  });
+
+  return serviceOfferings;
+}
