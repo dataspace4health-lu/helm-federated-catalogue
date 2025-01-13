@@ -1,0 +1,61 @@
+{
+  "NTT": [
+    {
+      "idPrefix": "https://dataspace4health.local/services/ntt/service1",
+      "type": "gx:ServiceOffering",
+      "gx:serviceTitle": "Service 1",
+      "gx:serviceDescription": "Highly secure service",
+      "gx:serviceEndpoint": "https://dataspace4health.local/services/ntt/storage",
+      "gx:offeredBy": "https://dataspace4health.local/participants/ntt",
+      "gx:policy": "",
+      "gx:termsAndConditions": {
+        "gx:URL": "http://termsandconds.com",
+        "gx:hash": "d8402a23de560f5ab34b22d1a142feb9e13b3143"
+      }
+    },
+    {
+      "idPrefix": "https://dataspace4health.local/services/ntt/service2",
+      "type": "gx:ServiceOffering",
+      "gx:serviceTitle": "Service 2",
+      "gx:serviceDescription": "Advanced analytics data service",
+      "gx:serviceEndpoint": "https://dataspace4health.local/services/ntt/analytics",
+      "gx:offeredBy": "https://dataspace4health.local/participants/ntt",
+      "gx:policy": "",
+      "gx:termsAndConditions": {
+        "gx:URL": "http://termsandconds.com",
+        "gx:hash": "d8402a23de560f5ab34b22d1a142feb9e13b3143"
+      }
+      
+    }
+  ],
+  "LIH": [
+    {
+      "idPrefix": "https://dataspace4health.local/services/lih/service1",
+      "type": "gx:ServiceOffering",
+      "gx:serviceTitle": "Service 3",
+      "gx:serviceDescription": "Efficient management  data",
+      "gx:serviceEndpoint": "https://dataspace4health.local/services/lih/trials",
+      "gx:offeredBy": "https://dataspace4health.local/participants/lih",
+      "gx:policy": "",
+      "gx:termsAndConditions": {
+        "gx:URL": "http://termsandconds.com",
+        "gx:hash": "d8402a23de560f5ab34b22d1a142feb9e13b3143"
+      }
+    }
+  ],
+  "LNDS": [
+    {
+      "idPrefix": "https://dataspace4health.local/services/lnds/service1",
+      "type": "gx:ServiceOffering",
+      "gx:serviceTitle": "Service 4",
+      "gx:serviceDescription": "Data sharing service",
+      "gx:serviceEndpoint": "https://dataspace4health.local/services/lnds/sharing",
+      "gx:offeredBy": "https://dataspace4health.local/participants/lnds",
+      "gx:policy": "",
+      "gx:termsAndConditions": {
+        "gx:URL": "http://termsandconds.com",
+        "gx:hash": "d8402a23de560f5ab34b22d1a142feb9e13b3143"
+      }
+    }
+  ]
+}

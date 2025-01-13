@@ -2,21 +2,31 @@ import * as jose from "jose";
 import { v4 as uuid4 } from "uuid";
 import { JsonWebSignature2020Signer } from "@gaia-x/json-web-signature-2020";
 import fs from "fs/promises";
+import axios from "axios";
 
+/**
+ * Generates a cryptographic key pair using the specified algorithm.
+ * Exports the keys in PEM format for storage or use.
+ */
 export async function generateKeyPair(algorithm) {
   const { publicKey, privateKey } = await jose.generateKeyPair(algorithm);
   const privateKeyPem = await jose.exportPKCS8(privateKey);
   const publicKeyPem = await jose.exportSPKI(publicKey);
-
   return { publicKeyPem, privateKeyPem };
 }
 
+/**
+ * Loads a private key from a file.
+ * Assumes the key is stored in PEM format.
+ */
 export async function loadKeyPair() {
   const privateKeyPem = await fs.readFile("src/prk.ss.pem", "utf-8");
-
   return { privateKeyPem };
 }
 
+/**
+ * Performs OIDC authentication to retrieve an access token.
+ */
 export async function authenticate(request: any, baseURL: string) {
   const authUrl =
     `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/auth?` +
@@ -53,22 +63,66 @@ export async function authenticate(request: any, baseURL: string) {
   return body.access_token;
 }
 
+/**
+ * Signs a JSON-LD credential using the specified algorithm.
+ * Allows signing with a dynamically generated or preloaded key.
+ * "Credential": The JSON-LD credential to be signed.
+ * "Algorithm": The algorithm used for signing (e.g., "ES256").
+ * "Config": Configuration object containing signing and entity details.
+ * "Entity": The entity associated with the credential.
+ * returns The signed credential.
+ */
 export async function signJsonLd(credential, algorithm, config, entity) {
-  // Generate a key pair or load an existing one.
   // Scenario 1: Generate a new key pair dynamically
   const { publicKeyPem, privateKeyPem } = await generateKeyPair(algorithm);
   const pk = await jose.importPKCS8(privateKeyPem, algorithm);
+  /**
+  * Scenario 2: Load an existing key pair from a file.
+  * Important Notes:
+  - The loaded key is pre-configured for the federated catalogue.
+    Using this key will result in responses being fetched from the cache.
+  - This key uses a different algorithm (PS256).
+    Ensure the code is updated to handle this algorithm correctly.
+  - Additionally, you need to update the `verificationMethod`
+    to either `did:web:compliance.lab.gaia-x.eu` or `did:web:example`.
+  const { privateKeyPem } = await loadKeyPair();
+  const pk = await jose.importPKCS8(privateKeyPem, "PS256");
+  */
 
-  // Scenario 2: Load an existing key pair from a file
-  // Note: The loaded key here is of a different algorithm (RS256),
-  // so ensure the code is updated accordingly to handle this algorithm.
-  // const { privateKeyPem } = await loadKeyPair();
-  // const pk = await jose.importPKCS8(privateKeyPem, "RS256");
+  const myDocumentLoader = async (url) => {
+    const maxRetries = 5; // Number of retry attempts
+    const retryDelay = 15000; // Wait time in milliseconds between retries
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await axios.get(url, { maxRedirects: 5 });
+        return {
+          contextUrl: null,
+          documentUrl: url,
+          document: response.data,
+        };
+      } catch (e) {
+        if (e.response && e.response.status === 429 && attempt < maxRetries) {
+          console.warn(
+            `Attempt ${attempt} failed with status 429. Retrying after ${retryDelay}ms...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        } else {
+          console.error(
+            `Attempt ${attempt} failed with error: ${e.message || e}`
+          );
+          throw e; // Rethrow if it's not a 429 or retries are exhausted
+        }
+      }
+    }
+  };
 
   const signer = new JsonWebSignature2020Signer({
     privateKey: pk,
     privateKeyAlg: algorithm,
     verificationMethod: `${config[entity]["issuer"]}#key-0`,
+    documentLoader: myDocumentLoader,
+    safe: false,
   });
 
   const signedCredential = await signer.sign(credential[entity]);
@@ -76,6 +130,12 @@ export async function signJsonLd(credential, algorithm, config, entity) {
   return signedCredential;
 }
 
+/**
+ * Creates a list of participants as JSON-LD credentials.
+ * Uses configuration details to populate participant data.
+ * "Config": Configuration object defining participant properties.
+ * reuturns A list of participants as JSON-LD objects.
+ */
 export async function createListParticipants(config) {
   const participants: any = [];
   for (const entity in config) {
@@ -96,7 +156,7 @@ export async function createListParticipants(config) {
           "gx:countrySubdivisionCode": config[entity]["headquarterAddress"],
         },
         "gx:legalRegistrationNumber": {
-          id: `${config[entity]["idPrefix"]}/${uuid4()}.json`, //vc['lrn']['credentialSubject']['id']
+          id: `${config[entity]["idPrefix"]}/${uuid4()}.json`,
         },
         "gx:legalAddress": {
           "gx:countrySubdivisionCode": config[entity]["legalAddress"],
@@ -110,16 +170,70 @@ export async function createListParticipants(config) {
   return participants;
 }
 
+/**
+ * Signs a list of JSON-LD objects with a specified algorithm.
+ * Iterates through the list and signs each item.
+ */
 export async function signListJsonLd(list, algorithm, config) {
   const signedList: any = [];
   for (const item of list) {
-    var entity = Object.keys(item)[0];
-    var signedItem = await signJsonLd(item, algorithm, config, entity);
+    const entity = Object.keys(item)[0];
+    const signedItem = await signJsonLd(item, algorithm, config, entity);
     signedList.push({ [entity]: signedItem });
   }
   return signedList;
 }
 
+/**
+ * Creates a list of service offerings for the given participants.
+ * Populates each service offering based on participant and service configurations.
+ * returns A list of service offerings as JSON-LD objects.
+ */
+export async function createListServicesOffering(
+  listCreatedParticipants,
+  servicesConfig,
+  config
+) {
+  const serviceOfferings: any = [];
+  listCreatedParticipants.forEach((participant) => {
+    const particpantName = Object.keys(participant)[0];
+    const configParticipant = config[particpantName];
+
+    if (servicesConfig[particpantName]) {
+      const servicesConfigData = servicesConfig[particpantName];
+      servicesConfigData.forEach((service) => {
+        const serviceData = {
+          "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/security/suites/jws-2020/v1",
+            "https://registry.lab.gaia-x.eu/development/api/trusted-shape-registry/v1/shapes/jsonld/trustframework#",
+          ],
+          id: `${service["idPrefix"]}/${uuid4()}/service.json`,
+          type: ["VerifiableCredential"],
+          issuer: `${config[particpantName]["issuer"]}/${uuid4()}`,
+          issuanceDate: new Date().toISOString(),
+          credentialSubject: {
+            type: "gx:ServiceOffering",
+            "gx:providedBy": {
+              id: participant[particpantName].verifiableCredential[0].id,
+            },
+            "gx:policy": service["gx:policy"],
+            "gx:termsAndConditions": service["gx:termsAndConditions"],
+            "gx:dataAccountExport": {
+              "gx:requestType": "API",
+              "gx:accessType": "digital",
+              "gx:formatType": "application/json",
+            },
+            id: `${service["idPrefix"]}/${uuid4()}/service.json`,
+          },
+        };
+        serviceOfferings.push({ [particpantName]: serviceData });
+      });
+    }
+  });
+
+  return serviceOfferings;
+}
 export async function updatedSelfDescription(selfDescription, algorithm) {
   // console.log("selfDescription to update", selfDescription);
   // console.log("Verifable credential to update", selfDescription.verifiableCredential);
@@ -159,4 +273,85 @@ export async function updatedSelfDescription(selfDescription, algorithm) {
   // console.log("Signed presentation", signedVP);
 
   return signedVP;
+}
+
+
+export async function signListJsonLdJwt(list, algorithm, config, type) {
+  const signedList: any = [];
+  for (const item of list) {
+    const entity = Object.keys(item)[0];
+    const signedItem = await signJsonLdJwt(item, algorithm, config, entity, type);
+    signedList.push({ [entity]: signedItem });
+  }
+  return signedList;
+}
+export async function signJsonLdJwt(credential, algorithm, config, entity, type) {
+  // Scenario 1: Generate a new key pair dynamically
+  const { publicKey, privateKey } = await jose.generateKeyPair(algorithm);
+  const jwk = await jose.exportJWK(privateKey);
+  //   console.log(jwk);
+  jwk.kid = `${config[entity]["issuer"]}#key-0`
+  jwk.iss = `${config[entity]["issuer"]}`;
+
+  // console.log(jwk);
+
+  // Generate a JWT token
+  const jwt = await new jose.SignJWT(credential[entity])
+    .setProtectedHeader({
+      alg: algorithm,
+      typ: type + "+ld+json+jwt",
+      cty: type + "+ld+json",
+      iss: jwk.iss,
+      kid: jwk.kid,
+    })
+    // .setIssuer(config["NTT"]["issuer"])
+    // .setIssuedAt()
+    // .setExpirationTime("90d")
+    .sign(privateKey);
+
+    return jwt;
+}
+export async function createListServicesOfferingForJwtFormat(
+  listCreatedParticipants,
+  servicesConfig,
+  config
+) {
+  const serviceOfferings: any = [];
+  listCreatedParticipants.forEach((participant) => {
+    const particpantName = Object.keys(participant)[0];
+    const configParticipant = config[particpantName];
+
+    if (servicesConfig[particpantName]) {
+      const servicesConfigData = servicesConfig[particpantName];
+      servicesConfigData.forEach((service) => {
+        const serviceData = {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://www.w3.org/ns/credentials/examples/v2",
+          ],
+          id: `${service["idPrefix"]}/${uuid4()}/service.json`,
+          type: ["VerifiableCredential"],
+          issuer: `${config[particpantName]["issuer"]}/${uuid4()}`,
+          validFrom: new Date().toISOString(),
+          credentialSubject: {
+            type: "gx:ServiceOffering",
+            "gx:providedBy": {
+              id: participant[particpantName].id,
+            },
+            "gx:policy": service["gx:policy"],
+            "gx:termsAndConditions": service["gx:termsAndConditions"],
+            "gx:dataAccountExport": {
+              "gx:requestType": "API",
+              "gx:accessType": "digital",
+              "gx:formatType": "application/json",
+            },
+            id: `${service["idPrefix"]}/${uuid4()}/service.json`,
+          },
+        };
+        serviceOfferings.push({ [particpantName]: serviceData });
+      });
+    }
+  });
+
+  return serviceOfferings;
 }
