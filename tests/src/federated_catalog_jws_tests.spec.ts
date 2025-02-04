@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
 import {
-  createListParticipants,
   signListJsonLd,
   updatedSelfDescription,
   createListServicesOffering,
 } from "./utils";
 import fs from "fs";
 import path from "path";
+import { createParticipants } from "./create_participant";
 
 const customConfig = JSON.parse(
   fs.readFileSync(path.resolve("src/customConfig.json"), "utf-8")
@@ -86,61 +86,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
   });
 
   test("Create Participants", async ({ request, baseURL }) => {
-    console.log("\n--- Starting Create Participants Test ---");
-
-    const vcParticipants = await createListParticipants(customConfig);
-    console.log("Generated VC Participants. Count:", vcParticipants.length);
-
-    const signedVcParticipants = await signListJsonLd(
-      vcParticipants,
-      algorithm,
-      customConfig
-    );
-    console.log(
-      "VC Participants signed successfully. Count:",
-      signedVcParticipants.length
-    );
-
-    VpParticipants = signedVcParticipants.map((signedVcParticipant) => {
-      const entity = Object.keys(signedVcParticipant)[0];
-      return {
-        [entity]: {
-          "@context": ["https://www.w3.org/2018/credentials/v1"],
-          type: ["VerifiablePresentation"],
-          verifiableCredential: [signedVcParticipant[entity]],
-        },
-      };
-    });
-
-    const signedVpParticipants = await signListJsonLd(
-      VpParticipants,
-      algorithm,
-      customConfig
-    );
-    console.log(
-      "VP Participants signed successfully. Count:",
-      signedVpParticipants.length
-    );
-
-    for (const signedVpParticipant of signedVpParticipants) {
-      const participant = Object.values(signedVpParticipant)[0];
-
-      console.log("Sending Participant to FC...");
-
-      const response = await request.post(`${baseURL}/catalog/participants`, {
-        headers: {
-          Accept: "*/*",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        data: JSON.stringify(participant),
-      });
-
-      console.log("Participant creation response:", response.status());
-      expect(response.ok()).toBeTruthy();
-    }
-
-    console.log("--- Create Participants Test Completed ---\n");
+    await createParticipants(request, baseURL, token, customConfig)  
   });
 
   test("Get List of Participants", async ({ request }) => {
@@ -448,4 +394,8 @@ test.describe("Cleaning Tests", () => {
 
     console.log("--- Delete All Service Offerings Test Completed ---\n");
   });
+});
+
+test("Create Participants for ui", async ({ request, baseURL }) => {
+  await createParticipants(request, baseURL, token, customConfig)  
 });
