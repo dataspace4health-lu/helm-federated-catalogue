@@ -50,23 +50,23 @@ ingress:
     paths:
     - path: /catalogue
       pathType: Prefix
-  replacePath:
-    regex: /catalogue(/|$)(.*)
-    replacement: /$2
+  # replacePath:
+  #   regex: /catalogue(/|$)(.*)
+  #   replacement: /$2
   # replaceHeader:
   #   header: Location
   #   regex: (/|^)swagger(.*)
   #   replacement: /catalogue/swagger$2
-  replaceBody:
-    regex: /_next/
-    replacement: /catalogue/_next/
-    logLevel: -2
-    monitoring:
-      methods:
-      - GET
-      types:
-      - "*/*"
-      - text/html
+  # replaceBody:
+  #   regex: /_next/
+  #   replacement: /catalogue/_next/
+  #   logLevel: -2
+  #   monitoring:
+  #     methods:
+  #     - GET
+  #     types:
+  #     - "*/*"
+  #     - text/html
   tls:
     - secretName: dataspace4health.local
       hosts:
@@ -85,7 +85,7 @@ resources: {}
   #   memory: 128Mi
 
 probes:
-  path: /
+  path: /catalogue
   initialDelaySeconds: 60
   periodSeconds: 30
 
@@ -124,7 +124,7 @@ extraEnv:
   - name: PORT
     value: "8088"
   - name: NEXT_PUBLIC_FRONTEND_BASE_URL
-    value: 
+    value: /catalogue
   - name: NEXT_PUBLIC_API_BASE_URL
     value: https://dataspace4health.local/catalogue/api
   - name: NEXT_PUBLIC_OIDC_AUTHORITY
