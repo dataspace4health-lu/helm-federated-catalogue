@@ -1,19 +1,19 @@
-# Default values for fc-portal.
+# Default values for fc-service.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-name: fc-portal
+name: fc-service
 replicaCount: 1
 
 image:
-  repository: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-demo-portal
+  repository: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-service-server
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""
-#fullnameOverride: "fc-portal"
+#fullnameOverride: "fc-service"
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -40,29 +40,14 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 8088
+  port: 8081
 
 ingress:
   enabled: true
-  # className: nginx
-  annotations:
-    # kubernetes.io/tls-acme: "true"
-    kubernetes.io/ingress.allow-http: "true"
-    # cert-manager.io/cluster-issuer: cert-manager-webhook
-    nginx.ingress.kubernetes.io/ssl-redirect: "false" #true"
-    nginx.ingress.kubernetes.io/affinity: cookie
-    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
-    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
-    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
-    # nginx.ingress.kubernetes.io/server-snippet: |
-    #     location /portal/actuator {
-    #       deny all;
-    #       return 403;
-    #     }
   hosts:
     - host: null
       paths:
-        - path: /portal
+        - path: /catalogue/api
           pathType: Prefix
   tls:
     - secretName: dataspace4health.local
@@ -82,7 +67,7 @@ resources: {}
   #   memory: 128Mi
 
 probes:
-  path: /portal/actuator/health
+  path: /catalogue/api/actuator/health
   initialDelaySeconds: 60
   periodSeconds: 30
 
@@ -107,7 +92,7 @@ affinity:
               - key: app
                 operator: In
                 values:
-                  - fc-portal
+                  - fc-service
           topologyKey: "kubernetes.io/hostname"
 
 restartPolicy: Always
@@ -117,18 +102,71 @@ restartPolicy: Always
 #     hostnames:
 #       - key-server
 
-storage:
-  enabled: false
-  size: 2Gi
-  path: /mnt/data/postgresql
-
 extraEnv:
   - name: SERVER_SERVLET_CONTEXT_PATH
-    value: /portal
-  - name: FEDERATED_CATALOGUE_BASE_URI
-    value: https://dataspace4health.local/catalog
+    value: /catalogue/api
+  - name: DATASTORE_FILE_PATH
+    value: /var/lib/fc-service/filestore
+  - name: FEDERATED_CATALOGUE_VERIFICATION_VC_SIGNATURE
+    value: "false"
+  - name: FEDERATED_CATALOGUE_VERIFICATION_VP_SIGNATURE
+    value: "false"
+  - name: GRAPHSTORE_QUERY_TIMEOUT_IN_SECONDS
+    value: "5"
   # - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY
   #   value: DEBUG
+
+postgresql:
+  enabled: true
+  auth:
+    username: fc-service
+    password: "xfsc4Ntt!"
+    database: fc-service
+    postgresPassword: "xfsc4Ntt!"
+  primary:
+    persistence:
+      enabled: true
+      size: 5Gi
+      
+neo4j:
+  enabled: true
+  auth:
+    password: "xfsc4Ntt!"
+  extraEnvVars:
+    - name: NEO4J_PLUGINS
+      value: '["apoc", "graph-data-science", "n10s"]'
+    - name: NEO4J_dbms_security_procedures_unrestricted
+      value: gds.*,apoc.*,n10s.*,semantics.*
+    - name: NEO4J_dbms_security_procedures_allowlist
+      value: gds.*,apoc.*,n10s.*,semantics.*
+  advertisedHost: "neo4j.local" 
+  resourcesPreset: "none"
+  service:
+    type: ""
+  persistence:
+    size: 5Gi
+  initContainers:
+    - name: init-plugins
+      image: appropriate/curl:latest
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: empty-dir
+          mountPath: /opt/bitnami/neo4j/plugins
+          subPath: app-plugins-dir
+      securityContext:
+        allowPrivilegeEscalation: false
+      command:
+        - "/bin/sh"
+        - "-c"
+        - |
+          set -xe
+
+          curl -L https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/5.20.0/apoc-5.20.0-extended.jar -O
+          curl -L https://github.com/neo4j-labs/neosemantics/releases/download/5.20.0/neosemantics-5.20.0.jar -O
+          curl -L https://graphdatascience.ninja/neo4j-graph-data-science-2.6.7.jar -O
+          cp -R apoc-5.20.0-extended.jar /opt/bitnami/neo4j/plugins
+          cp -R neosemantics-5.20.0.jar /opt/bitnami/neo4j/plugins
+          cp -R neo4j-graph-data-science-2.6.7.jar /opt/bitnami/neo4j/plugins
 
 keycloak:
   enabled: true

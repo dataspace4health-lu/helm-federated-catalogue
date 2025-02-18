@@ -2,6 +2,46 @@ fc-portal:
   nameOverride: portal
   keycloak:
     enabled: false
+  image:
+    repository: ds4h-registry:5432/catalogue/fc-portal
+    pullPolicy: Always
+    tag: "latest"
+  service:
+    port: 8080
+  probes:
+    path: /catalogue
+  extraEnv:
+    - name: PORT
+      value: "8088"
+    - name: NEXT_PUBLIC_FRONTEND_BASE_URL
+      value: /catalogue
+    - name: NEXT_PUBLIC_API_BASE_URL
+      value: https://dataspace4health.local/catalogue/api
+    - name: NEXT_PUBLIC_OIDC_AUTHORITY
+      value: https://dataspace4health.local/iam/realms/gaia-x
+    - name: NEXT_PUBLIC_OIDC_CLIENT_ID
+      value: federated-catalogue
+    - name: NEXT_PUBLIC_OIDC_CLIENT_SECRET
+      value: cf|J{G3z7a,@su5j(EJzq^G\$a6)4D9
+    - name: NEXT_PUBLIC_OIDC_GRANT_TYPE
+      value: authorization_code
+    - name: NEXT_PUBLIC_OIDC_REDIRECT_URI
+      value: https://dataspace4health.local/catalogue/redirect
+    - name: NEXT_PUBLIC_RESPONSE_TYPE
+      value: code
+    - name: NEXT_PUBLIC_SCOPE
+      value: openid
+  ingress:
+    enabled: true
+    hosts:
+      - host: null
+        paths:
+          - path: /catalogue
+            pathType: Prefix
+    tls:
+      - secretName: dataspace4health.local
+        hosts:
+          - dataspace4health.local
 fc-service:
   nameOverride: service
   postgresql:
@@ -12,3 +52,40 @@ fc-service:
     nameOverride: service-keycloak
     postgresql:
       nameOverride: service-keycloak-postgresql
+  image:
+    repository: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-service-server
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "latest"
+  service:
+    port: 8081
+  probes:
+    path: /catalogue/api/actuator/health
+  storage:
+    enabled: false
+    size: 2Gi
+    path: /mnt/data/postgresql
+  extraEnv:
+  - name: SERVER_SERVLET_CONTEXT_PATH
+    value: /catalogue/api
+  - name: DATASTORE_FILE_PATH
+    value: /var/lib/fc-service/filestore
+  - name: FEDERATED_CATALOGUE_VERIFICATION_VC_SIGNATURE
+    value: "false"
+  - name: FEDERATED_CATALOGUE_VERIFICATION_VP_SIGNATURE
+    value: "false"
+  - name: GRAPHSTORE_QUERY_TIMEOUT_IN_SECONDS
+    value: "5"
+  # - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY
+  #   value: DEBUG
+  ingress:
+    enabled: true
+    hosts:
+      - host: null
+        paths:
+          - path: /catalogue/api
+            pathType: Prefix
+    tls:
+      - secretName: dataspace4health.local
+        hosts:
+          - dataspace4health.local

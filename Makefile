@@ -18,8 +18,8 @@ fi
 docker rm -f playwright
 endef
 
-SUBDIRS := fc-portal/. fc-service/.
-CURRENT_DIR := fcat#$(notdir $(shell pwd))
+SUBDIRS := $(wildcard components/*/.)
+CURRENT_DIR := fcat# $(shell echo $(notdir $(shell pwd)) | tr '[:upper:]' '[:lower:]')
 
 .PHONY: all build $(SUBDIRS) install test uninstall clean
 

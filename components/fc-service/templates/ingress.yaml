@@ -19,10 +19,29 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "fc-service.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- $middlewares := list }}
+    {{- if .Values.ingress.replacePath }}
+      {{- $middlewares = printf "%s-%s-%s" .Release.Namespace (include "app.chartname" .) "replacepathregex@kubernetescrd" | append $middlewares }}
+    {{- end }}
+    {{- if .Values.ingress.replaceBody }}
+      {{- $middlewares = printf "%s-%s-%s" .Release.Namespace (include "app.chartname" .) "replacebodyregex@kubernetescrd" | append $middlewares }}
+    {{- end }}
+    {{- if .Values.ingress.replaceHeader }}
+      {{- $middlewares = printf "%s-%s-%s" .Release.Namespace (include "app.chartname" .) "replaceheaderregex@kubernetescrd" | append $middlewares }}
+    {{- end }}
+    {{- if .Values.ingress.headers }}
+      {{- $middlewares = printf "%s-%s-%s" .Release.Namespace (include "app.chartname" .) "headers@kubernetescrd" | append $middlewares }}
+    {{- end }}
+    {{- if .Values.ingress.clientMaxBodySize }}
+      {{- $middlewares = printf "%s-%s-%s" .Release.Namespace (include "app.chartname" .) "client-max-body-size@kubernetescrd" | append $middlewares }}
+    {{- end }}
+    {{- if $middlewares }}
+      traefik.ingress.kubernetes.io/router.middlewares: {{ join "," $middlewares }}
+    {{- end }}
+    {{- if .Values.ingress.annotations }}
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+    {{- end }}
 spec:
   {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
   ingressClassName: {{ .Values.ingress.className }}

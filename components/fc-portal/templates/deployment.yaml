@@ -34,21 +34,6 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if and .Values.ingress.tls (gt (len .Values.ingress.tls) 0) }}
-          command: 
-            - /bin/sh
-          args:
-            - -c
-            - |
-              for f in /opt/fc-portal/certs/*.crt; do 
-                echo "Adding certificate $f to keystore"
-                certname=$(echo $(basename $f) | sed 's|.crt||g' )
-                keytool -import -trustcacerts -noprompt -storepass changeit -alias $certname -file $f -keystore ${JAVA_HOME}/lib/security/cacerts
-              done
-              
-              echo "Starting Spring Boot"
-              java ${JAVA_OPTS} -cp @/app/jib-classpath-file eu.xfsc.fc.demo.CatalogueDemoApplication
-          {{- end }}
           env:
             - name: SERVER_PORT
               value: "{{ .Values.service.port }}"
@@ -66,16 +51,16 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: {{ .Values.probes.path }}
-              port: http
-          readinessProbe:
-            httpGet:
-              path: {{ .Values.probes.path }} 
-              port: http
-            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
-            periodSeconds: {{ .Values.probes.periodSeconds }}
+          # livenessProbe:
+          #   httpGet:
+          #     path: {{ .Values.probes.path }}
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: {{ .Values.probes.path }} 
+          #     port: http
+          #   initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
+          #   periodSeconds: {{ .Values.probes.periodSeconds }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
