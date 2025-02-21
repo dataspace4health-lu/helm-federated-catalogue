@@ -7,14 +7,14 @@ fc-portal:
     pullPolicy: Always
     tag: "latest"
   service:
-    port: 8080
+    port: 8088
   probes:
-    path: /catalogue
+    path: /catalogue/ui
   extraEnv:
     - name: PORT
       value: "8088"
     - name: NEXT_PUBLIC_FRONTEND_BASE_URL
-      value: /catalogue
+      value: /catalogue/ui
     - name: NEXT_PUBLIC_API_BASE_URL
       value: https://dataspace4health.local/catalogue/api
     - name: NEXT_PUBLIC_OIDC_AUTHORITY
@@ -26,22 +26,34 @@ fc-portal:
     - name: NEXT_PUBLIC_OIDC_GRANT_TYPE
       value: authorization_code
     - name: NEXT_PUBLIC_OIDC_REDIRECT_URI
-      value: https://dataspace4health.local/catalogue/redirect
-    - name: NEXT_PUBLIC_RESPONSE_TYPE
+      value: https://dataspace4health.local//catalogue/ui/redirect
+    - name: NEXT_PUBLIC_OIDC_RESPONSE_TYPE
       value: code
-    - name: NEXT_PUBLIC_SCOPE
+    - name: NEXT_PUBLIC_OIDC_SCOPE
       value: openid
   ingress:
     enabled: true
     hosts:
-      - host: null
-        paths:
-          - path: /catalogue
-            pathType: Prefix
+    - host: null
+      paths:
+      - path: /catalogue/ui
+        pathType: Prefix
+    replaceBody:
+      regex: /_next/
+      replacement: /catalogue/ui/_next/
+      logLevel: -2
+      monitoring:
+        methods:
+        - GET
+        types:
+        - "*/*"
+        - text/html
+        - text/x-component
+        - application/javascript
     tls:
-      - secretName: dataspace4health.local
-        hosts:
-          - dataspace4health.local
+    - secretName: dataspace4health.local
+      hosts:
+      - dataspace4health.local
 fc-service:
   nameOverride: service
   postgresql:
@@ -66,6 +78,8 @@ fc-service:
     size: 2Gi
     path: /mnt/data/postgresql
   extraEnv:
+  - name: JAVA_OPTS
+    value: -Dlogging.level.eu.xfsc.fc=DEBUG
   - name: SERVER_SERVLET_CONTEXT_PATH
     value: /catalogue/api
   - name: DATASTORE_FILE_PATH
