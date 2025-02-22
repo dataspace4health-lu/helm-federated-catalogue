@@ -171,7 +171,7 @@ neo4j:
 keycloak:
   enabled: true
   url: https://dataspace4health.local/iam/
-  jwtIssuer: https://dataspace4health.local/iam/realms/gaia-x
+  jwtIssuer: https://dataspace4health.local/iam/realms/ds4h
   client:
     id: "federated-catalogue"
     secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9"

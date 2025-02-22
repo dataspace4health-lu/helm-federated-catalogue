@@ -61,7 +61,6 @@ ingress:
       - "*/*"
       - text/html
       - text/x-component
-      - application/javascript
   tls:
   - secretName: dataspace4health.local
     hosts:
@@ -123,7 +122,7 @@ extraEnv:
   - name: NEXT_PUBLIC_API_BASE_URL
     value: https://dataspace4health.local/catalogue/api
   - name: NEXT_PUBLIC_OIDC_AUTHORITY
-    value: https://dataspace4health.local/iam/realms/gaia-x
+    value: https://dataspace4health.local/iam/realms/ds4h
   - name: NEXT_PUBLIC_OIDC_CLIENT_ID
     value: federated-catalogue
   - name: NEXT_PUBLIC_OIDC_CLIENT_SECRET
@@ -140,7 +139,7 @@ extraEnv:
 keycloak:
   enabled: true
   url: https://dataspace4health.local/iam/
-  jwtIssuer: https://dataspace4health.local/iam/realms/gaia-x
+  jwtIssuer: https://dataspace4health.local/iam/realms/ds4h
   client:
     id: "federated-catalogue"
     secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9"

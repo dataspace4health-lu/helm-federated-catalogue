@@ -18,7 +18,7 @@ fc-portal:
     - name: NEXT_PUBLIC_API_BASE_URL
       value: https://dataspace4health.local/catalogue/api
     - name: NEXT_PUBLIC_OIDC_AUTHORITY
-      value: https://dataspace4health.local/iam/realms/gaia-x
+      value: https://dataspace4health.local/iam/realms/ds4h
     - name: NEXT_PUBLIC_OIDC_CLIENT_ID
       value: federated-catalogue
     - name: NEXT_PUBLIC_OIDC_CLIENT_SECRET
@@ -49,7 +49,6 @@ fc-portal:
         - "*/*"
         - text/html
         - text/x-component
-        - application/javascript
     tls:
     - secretName: dataspace4health.local
       hosts:
