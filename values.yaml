@@ -1,4 +1,4 @@
-fc-portal:
+fcat-portal:
   nameOverride: portal
   keycloak:
     enabled: false
@@ -26,7 +26,7 @@ fc-portal:
     - name: NEXT_PUBLIC_OIDC_GRANT_TYPE
       value: authorization_code
     - name: NEXT_PUBLIC_OIDC_REDIRECT_URI
-      value: https://dataspace4health.local//catalogue/ui/redirect
+      value: https://dataspace4health.local/catalogue/ui/redirect
     - name: NEXT_PUBLIC_OIDC_RESPONSE_TYPE
       value: code
     - name: NEXT_PUBLIC_OIDC_SCOPE
@@ -53,21 +53,80 @@ fc-portal:
     - secretName: dataspace4health.local
       hosts:
       - dataspace4health.local
-fc-service:
+fcat-service:
   nameOverride: service
   postgresql:
     nameOverride: service-postgresql
   neo4j:
     nameOverride: service-neo4j
   keycloak:
+    enabled: true
     nameOverride: service-keycloak
+    url: https://dataspace4health.local/iam/
+    realm: ds4h
+    jwtIssuer: https://dataspace4health.local/iam/realms/ds4h
+    client:
+      id: "federated-catalogue"
+      secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9"
+    image:
+      tag: 23.0.7
+    auth:
+      adminUser: admin
+      adminPassword: "xfsc4Ntt!"
+    extraEnvVars:
+      - name: KEYCLOAK_EXTRA_ARGS
+        value: "--import-realm"
+      - name: PROXY_ADDRESS_FORWARDING
+        value: "true"
+    extraVolumeMounts:
+      - name: config
+        mountPath: "/opt/bitnami/keycloak/data/import/iam-realm.json"
+        subPath: "iam-realm.json"
+        readOnly: true
+    extraVolumes:
+      - name: config
+        configMap:
+          name: keycloak-realm
+          items:
+          - key: "iam-realm.json"
+            path: "iam-realm.json"
+    logging:
+      level: "DEBUG,io.quarkus:INFO,freemarker.cache:INFO,liquibase:INFO,org.hibernate:INFO,org.infinispan:INFO,org.keycloak.services.scheduled:INFO,org.keycloak.transaction:INFO,io.netty.buffer.PoolThreadCache:INFO,org.keycloak.models.sessions.infinispan:INFO"
+    production: false
+    proxy: edge
+    httpRelativePath: "/iam/"
     postgresql:
+      enabled: true
       nameOverride: service-keycloak-postgresql
+      auth: 
+        database: keycloak
+        username: keycloak 
+        password: "xfsc4Ntt!"
+        postgresPassword: "xfsc4Ntt!"
+      primary:
+        persistence:
+          size: 5Gi
+    ingress:
+      enabled: true
+      # ingressClassName: nginx
+      annotations:
+      #   kubernetes.io/ingress.allow-http: "true"
+      # #  cert-manager.io/cluster-issuer: cert-manager-webhook
+      #   nginx.ingress.kubernetes.io/ssl-redirect: "false"
+        nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+      extraHosts:
+        - name: ""
+      pathType: Prefix
+      path: /iam
+      extraTls:
+        - secretName: dataspace4health.local
+          hosts:
+            - dataspace4health.local
   image:
     repository: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-service-server
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
+    tag: "2.0.0"
   service:
     port: 8081
   probes:

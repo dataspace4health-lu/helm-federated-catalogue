@@ -33,7 +33,7 @@ test.describe("Federated Catalogue Participant Management Tests With JWT Signatu
       console.log("\n--- Starting OIDC Authentication Test ---");
 
       const authUrl =
-        `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/auth?` +
+        `${process.env.IAM_PATH}/realms/${process.env.IAM_REALM}/protocol/openid-connect/auth?` +
         `response_type=code&` +
         `client_id=federated-catalogue&` +
         `scope=openid&` +
@@ -70,7 +70,7 @@ test.describe("Federated Catalogue Participant Management Tests With JWT Signatu
       expect(code).toBeDefined();
       expect(code).not.toBe("");
 
-      const tokenUrl = `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/token`;
+      const tokenUrl = `${process.env.IAM_PATH}/realms/${process.env.IAM_REALM}/protocol/openid-connect/token`;
       response = await request.post(tokenUrl, {
         form: {
           grant_type: "authorization_code",
@@ -90,7 +90,7 @@ test.describe("Federated Catalogue Participant Management Tests With JWT Signatu
       console.log("--- OIDC Authentication Test Completed ---\n");
     });
 
-    test("Create Participants", async ({ request, baseURL }) => {
+    test("Create Participants", async ({ request }) => {
       console.log("\n--- Starting Create Participants Test (With JWT Updated Format) ---");
 
       vcParticipants = await createListParticipants(customConfig);
@@ -143,7 +143,7 @@ test.describe("Federated Catalogue Participant Management Tests With JWT Signatu
 
         console.log("Sending Participant to FC...");
 
-        const response = await request.post(`${baseURL}/catalog/participants`, {
+        const response = await request.post(`${process.env.FC_API_PATH}/participants`, {
           headers: {
             Accept: "*/*",
             "Content-Type": "application/json",
@@ -167,7 +167,6 @@ test.describe("Federated Catalogue Participant Management Tests With JWT Signatu
 test.describe("Federated Catalogue Service Offering Management Tests", () => {
     test("Create Service Offering for Participants", async ({
       request,
-      baseURL,
     }) => {
       console.log("\n--- Starting Create Service Offering Test (With JWT Updated Format)---");
 
@@ -230,7 +229,7 @@ test.describe("Federated Catalogue Service Offering Management Tests", () => {
         console.log(`Sending Service Offering to Federated Catalogue.`);
 
         const response = await request.post(
-          `${baseURL}/catalog/self-descriptions`,
+          `${process.env.FC_API_PATH}/self-descriptions`,
           {
             headers: {
               Accept: "*/*",

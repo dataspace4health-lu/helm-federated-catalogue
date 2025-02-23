@@ -1,6 +1,6 @@
 apiVersion: v2
-name: federated-catalog
-description: A Helm chart for GXFS Federated Catalogue.
+name: fcat-portal
+description: A Helm chart for GXFS Federated Catalogue Portal.
 type: application
 
 # This is the chart version. This version number should be incremented each time you make changes
@@ -15,9 +15,7 @@ version: 0.3.0
 appVersion: "2.0.0"
 
 dependencies:
-  - name: fcat-service
-    version: 0.3.0
-    repository: "file://components/fcat-service"
-  - name: fcat-portal
-    version: 0.3.0
-    repository: "file://components/fcat-portal"
+  - name: keycloak
+    version: 21.6.0
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: keycloak.enabled

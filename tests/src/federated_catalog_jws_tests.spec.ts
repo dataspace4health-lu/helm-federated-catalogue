@@ -28,7 +28,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
     console.log("\n--- Starting OIDC Authentication Test ---");
 
     const authUrl =
-      `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/auth?` +
+      `${process.env.IAM_PATH}/realms/${process.env.IAM_REALM}/protocol/openid-connect/auth?` +
       `response_type=code&` +
       `client_id=federated-catalogue&` +
       `scope=openid&` +
@@ -65,7 +65,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
     expect(code).toBeDefined();
     expect(code).not.toBe("");
 
-    const tokenUrl = `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/token`;
+    const tokenUrl = `${process.env.IAM_PATH}/realms/${process.env.IAM_REALM}/protocol/openid-connect/token`;
     response = await request.post(tokenUrl, {
       form: {
         grant_type: "authorization_code",
@@ -85,14 +85,14 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
     console.log("--- OIDC Authentication Test Completed ---\n");
   });
 
-  test("Create Participants", async ({ request, baseURL }) => {
-    await createParticipants(request, baseURL, token, customConfig)  
+  test("Create Participants", async ({ request }) => {
+    await createParticipants(request, process.env.FC_API_PATH, token, customConfig)  
   });
 
   test("Get List of Participants", async ({ request }) => {
     console.log("\n--- Starting Get List of Participants Test ---");
 
-    const response = await request.get(`catalog/participants`, {
+    const response = await request.get(`${process.env.FC_API_PATH}/participants`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -121,7 +121,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
       console.log("Fetching Participant with ID:", extractedId);
 
       const response = await request.get(
-        `catalog/participants/${extractedId}`,
+        `${process.env.FC_API_PATH}/participants/${extractedId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -161,7 +161,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
       console.log("Self-description updated.");
 
       const response = await request.put(
-        `catalog/participants/${extractedId}`,
+        `${process.env.FC_API_PATH}/participants/${extractedId}`,
         {
           headers: {
             Accept: "application/json",
@@ -186,8 +186,7 @@ test.describe("Federated Catalogue Participant Management Tests", () => {
 
 test.describe("Federated Catalogue Service Offering Management Tests", () => {
   test("Create Service Offering for Participants", async ({
-    request,
-    baseURL,
+    request
   }) => {
     console.log("\n--- Starting Create Service Offering Test ---");
 
@@ -237,7 +236,7 @@ test.describe("Federated Catalogue Service Offering Management Tests", () => {
       );
 
       const response = await request.post(
-        `${baseURL}/catalog/self-descriptions`,
+        `${process.env.FC_API_PATH}/self-descriptions`,
         {
           headers: {
             Accept: "*/*",
@@ -257,10 +256,10 @@ test.describe("Federated Catalogue Service Offering Management Tests", () => {
     console.log("--- Create Service Offering Test Completed ---\n");
   });
 
-  test("Get List Services Offering", async ({ request, baseURL }) => {
+  test("Get List Services Offering", async ({ request }) => {
     console.log("\n--- Starting Get Self-Descriptions Test ---");
 
-    const url = `${baseURL}/catalog/self-descriptions?statuses=REVOKED,ACTIVE,DEPRECATED`;
+    const url = `${process.env.FC_API_PATH}/self-descriptions?statuses=REVOKED,ACTIVE,DEPRECATED`;
     const response = await request.get(url, {
       headers: {
         Accept: "application/json",
@@ -289,7 +288,7 @@ test.describe("Federated Catalogue Service Offering Management Tests", () => {
 
       console.log(`Fetching Service Offering with Hash: ${hash}`);
 
-      const response = await request.get(`catalog/self-descriptions/${hash}`, {
+      const response = await request.get(`${process.env.FC_API_PATH}/self-descriptions/${hash}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -329,7 +328,7 @@ test.describe("Cleaning Tests", () => {
 
         console.log(`Deleting Participant with ID: ${extractedId}`);
         const response = await request.delete(
-          `catalog/participants/${extractedId}`,
+          `${process.env.FC_API_PATH}/participants/${extractedId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -350,10 +349,10 @@ test.describe("Cleaning Tests", () => {
     console.log("--- Delete All Participants Test Completed ---\n");
   });
 
-  test("Delete All Service Offerings", async ({ request, baseURL }) => {
+  test("Delete All Service Offerings", async ({ request }) => {
     console.log("\n--- Starting Delete All Service Offerings Test ---");
 
-    const url = `${baseURL}/catalog/self-descriptions?statuses=REVOKED,ACTIVE,DEPRECATED`;
+    const url = `${process.env.FC_API_PATH}/self-descriptions?statuses=REVOKED,ACTIVE,DEPRECATED`;
     console.log("Fetching all service offerings...");
     const getResponse = await request.get(url, {
       headers: {
@@ -374,7 +373,7 @@ test.describe("Cleaning Tests", () => {
 
         console.log(`Deleting Service Offering with Hash: ${hash}`);
         const deleteResponse = await request.delete(
-          `catalog/self-descriptions/${hash}`,
+          `${process.env.FC_API_PATH}/self-descriptions/${hash}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -396,6 +395,6 @@ test.describe("Cleaning Tests", () => {
   });
 });
 
-test("Create Participants for ui", async ({ request, baseURL }) => {
-  await createParticipants(request, baseURL, token, customConfig)  
+test("Create Participants for ui", async ({ request }) => {
+  await createParticipants(request, process.env.FC_API_PATH, token, customConfig)  
 });
