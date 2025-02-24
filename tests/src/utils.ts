@@ -27,10 +27,10 @@ export async function loadKeyPair() {
 /**
  * Performs OIDC authentication to retrieve an access token.
  */
-export async function authenticate(request: any, baseURL: string) {
+export async function authenticate(request: any, iamUrl: string, iamRealm: string, redirectUri: string) {
   const authUrl =
-    `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/auth?` +
-    `response_type=code&client_id=federated-catalogue&scope=openid&redirect_uri=${baseURL}/oidc/auth/callback`;
+    `${iamUrl}/realms/${iamRealm}/protocol/openid-connect/auth?` +
+    `response_type=code&client_id=federated-catalogue&scope=openid&redirect_uri=${redirectUri}/oidc/auth/callback`;
 
   let response = await request.get(authUrl, { maxRedirects: 0 });
 
@@ -48,14 +48,14 @@ export async function authenticate(request: any, baseURL: string) {
   const headers = await response.headers();
   const code = new URL(headers["location"]).searchParams.get("code");
 
-  const tokenUrl = `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/token`;
+  const tokenUrl = `${iamUrl}/realms/${iamRealm}/protocol/openid-connect/token`;
   response = await request.post(tokenUrl, {
     form: {
       grant_type: "authorization_code",
       client_id: "federated-catalogue",
       client_secret: "cf|J{G3z7a,@su5j(EJzq^G$a6)4D9",
       code: code,
-      redirect_uri: `${baseURL}/oidc/auth/callback`,
+      redirect_uri: `${redirectUri}/oidc/auth/callback`,
     },
   });
 

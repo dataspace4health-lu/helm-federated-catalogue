@@ -1,0 +1,14 @@
+{{- if .Values.keycloak.enabled }}
+{{- if .Values.keycloak.extraVolumes }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+data:
+  iam-realm.json: |-
+{{ .Files.Get "iam-realm.json" | indent 4}}
+{{- end }}    
+{{- end }}    

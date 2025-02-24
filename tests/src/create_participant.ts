@@ -2,7 +2,7 @@ import { createListParticipants, signListJsonLd } from "./utils";
 
 const algorithm = "ES256";
 
-export async function createParticipants(request: any, baseURL: any, token: string, customConfig: any) {
+export async function createParticipants(request: any, fcApiUrl: any, token: string, customConfig: any) {
     console.log("\n--- Starting Create Participants ---");
 
     const vcParticipants = await createListParticipants(customConfig);
@@ -30,7 +30,7 @@ export async function createParticipants(request: any, baseURL: any, token: stri
 
         console.log("Sending Participant to FC...");
 
-        const response = await request.post(`${baseURL}/catalog/participants`, {
+        const response = await request.post(`${fcApiUrl}/participants`, {
             headers: {
                 Accept: "*/*",
                 "Content-Type": "application/json",

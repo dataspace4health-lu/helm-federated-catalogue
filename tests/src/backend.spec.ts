@@ -7,7 +7,7 @@ test.describe.configure({ mode: 'serial' });
 let token;
 
 test('OIDC Authentication', async ({ request, baseURL }) => {
-  const authUrl = `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/auth?` +
+  const authUrl = `${process.env.IAM_PATH}/realms/${process.env.IAM_REALM}/protocol/openid-connect/auth?` +
       `response_type=code&` +
       `client_id=federated-catalogue&` +
       `scope=openid&` +
@@ -37,7 +37,7 @@ test('OIDC Authentication', async ({ request, baseURL }) => {
   expect(code).toBeDefined();
   expect(code).not.toBe("");
 
-  const tokenUrl = `${baseURL}/iam/realms/gaia-x/protocol/openid-connect/token`;
+  const tokenUrl = `${process.env.IAM_PATH}/realms/${process.env.IAM_REALM}/protocol/openid-connect/token`;
   response = await request.post(tokenUrl, {
     form: {
       grant_type: 'authorization_code',
@@ -58,7 +58,7 @@ test('OIDC Authentication', async ({ request, baseURL }) => {
 
 // Example test for an endpoint
 test('GET API swagger', async ({ request }) => {
-  const response = await request.get(`/catalog/swagger-ui/index.html`, {
+  const response = await request.get(`${process.env.FC_API_PATH}/swagger-ui/index.html`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -68,11 +68,12 @@ test('GET API swagger', async ({ request }) => {
 });
 
 test('Get List of users', async ({ request }) => {
-  const usersList = await request.get(`catalog/users`, {
+  const usersList = await request.get(`${process.env.FC_API_PATH}/users`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
   });
+
   expect(usersList.ok()).toBeTruthy();
   let jsonUserList = await usersList.json()
   expect(jsonUserList).toHaveProperty('items');
@@ -80,7 +81,7 @@ test('Get List of users', async ({ request }) => {
 });
 
 test('Get List of participants', async ({ request }) => {
-  const usersList = await request.get(`catalog/participants`, {
+  const usersList = await request.get(`${process.env.FC_API_PATH}/participants`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -172,7 +173,7 @@ test('Get List of participants', async ({ request }) => {
 //   };
   
 //   //console.log("id",id)
-//   const createParticipants = await request.post(`catalog/participants`, {
+//   const createParticipants = await request.post(`${process.env.FC_API_PATH}/participants`, {
 //     headers: {
 //       'Accept': '*/*',
 //       'Content-Type': 'application/json',
@@ -188,8 +189,7 @@ test('Get List of participants', async ({ request }) => {
 // });
 
 // test('Get Created participant ', async ({ request }) => {
-
-//   const Participant = await request.get(`catalog/participants/${encodedId}`, {
+//   const Participant = await request.get(`${process.env.FC_API_PATH}/participants/${encodedId}`, {
 //     headers: {
 //       Authorization: `Bearer ${token}`
 //     }
@@ -200,8 +200,7 @@ test('Get List of participants', async ({ request }) => {
 // });
 
 // test('delete Created participant ', async ({ request }) => {
-  
-//   const Participant = await request.delete(`catalog/participants/${encodedId}`, {
+//   const Participant = await request.delete(`${process.env.FC_API_PATH}/participants/${encodedId}`, {
 //     headers: {
 //       Authorization: `Bearer ${token}`
 //     }
