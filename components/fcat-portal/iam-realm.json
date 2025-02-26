@@ -456,6 +456,26 @@
         ]},
       "groups": [
       ]
+    },
+    {
+      "username": "lih_admin",
+      "enabled": true,
+      "emailVerified": false,
+      "firstName": "Test",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "xfsc4Lih!",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "federated-catalogue": [
+          "Ro-MU-CA"
+        ]},
+      "groups": [
+      ]
     }
   ],
   "scopeMappings": [
