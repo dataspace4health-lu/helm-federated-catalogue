@@ -31,6 +31,8 @@ fcat-portal:
       value: code
     - name: NEXT_PUBLIC_OIDC_SCOPE
       value: openid
+    - name: NEXT_PUBLIC_GAIAX_COMPLIANCE_URL
+      value: https://compliance.lab.gaia-x.eu/v1-staging/api/credential-offers
   ingress:
     enabled: true
     hosts:
