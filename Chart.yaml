@@ -1,5 +1,5 @@
 apiVersion: v2
-name: federated-catalog
+name: federated-catalogue
 description: A Helm chart for GXFS Federated Catalogue.
 type: application
 
